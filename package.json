@@ -1,0 +1,33 @@
+{
+  "name": "breeze-next",
+  "version": "1.0.0",
+  "description": "A simple Node.js project for our university project.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "npx postcss ./public/assets/css/global.css -o ./public/assets/css/output.css --watch",
+    "dev": "concurrently \"npm run build:css\" \"nodemon index.js\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1xterminal/breeze-next.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/1xterminal/breeze-next/issues"
+  },
+  "homepage": "https://github.com/1xterminal/breeze-next#readme",
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.0.15",
+    "concurrently": "^9.1.2",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "nodemon": "^3.1.9",
+    "postcss": "^8.5.3",
+    "postcss-cli": "^11.0.1",
+    "tailwindcss": "^4.0.15"
+  }
+}
