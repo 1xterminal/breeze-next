@@ -41,7 +41,10 @@ router.post('/web/login', loginValidationRules(), (req, res, next) => {
   loginUser(req, res, next);
 });
 
-router.get('/logout', (req, res) => {
+// @route   POST /api/auth/web/logout
+// @desc    Logout user and clear session
+// @access  Private
+router.post('/web/logout', (req, res) => {
     // Clear session
     req.session.destroy((err) => {
         if (err) {
@@ -52,7 +55,7 @@ router.get('/logout', (req, res) => {
         // Clear any other auth-related cookies
         res.clearCookie('connect.sid');
         
-        // Flash message (optional)
+        // Flash message
         req.flash('success', 'Successfully logged out');
         
         // Redirect to login page

@@ -7,15 +7,26 @@ const AdminLogSchema = new mongoose.Schema({
     required: true,
     index: true, // Index for potentially filtering logs by admin
   },
+  adminUsername: {
+    type: String,
+    required: true,
+  },
   action: {
     type: String,
     required: true,
     enum: [ // Define specific actions for consistency
+      'CREATE_USER',
+      'UPDATE_USER',
+      'DELETE_USER',
+      'ACTIVATE_USER',
+      'DEACTIVATE_USER',
       'LOGIN_ADMIN',
+      'LOGOUT_ADMIN',
+      'UPDATE_SETTINGS',
+      'CLEAR_LOGS',
       'VIEW_USER_LIST',
       'VIEW_USER_DETAILS',
       'UPDATE_USER_ROLE',
-      'DELETE_USER',
       'VIEW_SYSTEM_STATS',
       // Add more specific admin actions as needed
     ],
@@ -27,17 +38,19 @@ const AdminLogSchema = new mongoose.Schema({
   },
   details: {
     type: mongoose.Schema.Types.Mixed, // Store any extra context, like old/new values on an update
+    default: {},
   },
   ipAddress: { // Good practice to log IP for security audits
     type: String,
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now,
     required: true,
   },
+}, {
+  timestamps: true
 });
 
-AdminLogSchema.index({ timestamp: -1 }); // Index for sorting logs chronologically
+// Index for faster queries
+AdminLogSchema.index({ createdAt: -1 });
+AdminLogSchema.index({ adminUserId: 1 });
+AdminLogSchema.index({ action: 1 });
 
 module.exports = mongoose.model('AdminLog', AdminLogSchema);

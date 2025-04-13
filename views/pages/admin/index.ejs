@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <!-- Include Tailwind CSS from CDN -->
+  <link href="/css/output.css" rel="stylesheet" />
+  <!-- Include jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="min-h-screen gradient-main bg-[length:200%] animate-[gradient-animation_40s_ease_infinite] bg-fixed">
+    <%- include('../../components/navbar') %>
+
+    <!-- Flash Messages -->
+    <% if (messages.success && messages.success.length > 0) { %>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            <div class="glass-card-sm bg-green-500/40 text-white px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline"><%= messages.success %></span>
+            </div>
+        </div>
+    <% } %>
+
+    <% if (messages.error && messages.error.length > 0) { %>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            <div class="glass-card-sm bg-red-400/30 text-white px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline"><%= messages.error %></span>
+            </div>
+        </div>
+    <% } %>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="space-y-6">
+            <!-- Stats Overview -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold text-white mb-6">System Overview</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-white/10 rounded-lg p-4 text-center">
+                        <div class="text-3xl font-bold text-white"><%= stats.totalUsers %></div>
+                        <div class="text-white/70 text-sm">Total Users</div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-4 text-center">
+                        <div class="text-3xl font-bold text-white"><%= stats.totalSearches %></div>
+                        <div class="text-white/70 text-sm">Total Searches</div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-4 text-center">
+                        <div class="text-3xl font-bold text-white"><%= stats.recentSearches %></div>
+                        <div class="text-white/70 text-sm">Searches Today</div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-4 text-center">
+                        <div class="text-3xl font-bold text-white"><%= stats.newUsers %></div>
+                        <div class="text-white/70 text-sm">New Users Today</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div class="glass-card">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">User Management</h2>
+                    <button type="button" class="glass-button" data-modal-target="createUserModal">
+                        Add User
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-white/70 text-left">
+                                <th class="p-4">Username</th>
+                                <th class="p-4">Email</th>
+                                <th class="p-4">Role</th>
+                                <th class="p-4">Joined</th>
+                                <th class="p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% users.forEach(user => { %>
+                                <tr class="border-t border-white/10">
+                                    <td class="p-4 text-white"><%= user.username %></td>
+                                    <td class="p-4 text-white"><%= user.email %></td>
+                                    <td class="p-4">
+                                        <span class="px-2 py-1 rounded-full bg-white/20 text-white text-sm">
+                                            <%= user.role %>
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-white"><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                                    <td class="p-4">
+                                        <div class="flex gap-2">
+                                            <button type="button" 
+                                                    class="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors text-white"
+                                                    data-modal-target="editUserModal"
+                                                    data-user-id="<%= user._id %>"
+                                                    data-username="<%= user.username %>"
+                                                    data-email="<%= user.email %>"
+                                                    data-role="<%= user.role %>">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                                </svg>
+                                            </button>
+                                            <% if (currentUser && user._id.toString() !== currentUser.id) { %>
+                                                <button type="button"
+                                                        class="p-2 bg-red-400/30 rounded-lg hover:bg-red-500/40 transition-colors text-white"
+                                                        data-modal-target="deleteConfirmModal"
+                                                        data-user-id="<%= user._id %>"
+                                                        data-username="<%= user.username %>">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold text-white mb-6">Recent Activity</h2>
+                <div class="space-y-4">
+                    <% recentLogs.forEach(log => { %>
+                        <div class="bg-white/10 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-white font-medium"><%= log.action %></span>
+                                <span class="text-white/60 text-sm"><%= new Date(log.createdAt).toLocaleString() %></span>
+                            </div>
+                            <div class="text-white/70 text-sm">
+                                By <%= log.adminUserId?.username || 'Unknown' %> • IP: <%= log.ipAddress %>
+                            </div>
+                            <% if (log.details && Object.keys(log.details).length > 0) { %>
+                                <div class="mt-2 text-white/60 text-sm">
+                                    Details: <%= JSON.stringify(log.details) %>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold text-white mb-6">Quick Links</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="/admin/logs" class="flex items-center p-4 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>View System Logs</span>
+                    </a>
+                    <a href="/admin/settings" class="flex items-center p-4 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>System Settings</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <!-- Create User Modal -->
+     <div id="createUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-[10px] hidden z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-card w-full max-w-md m-auto relative" onclick="event.stopPropagation();">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white">Create New User</h3>
+                    <button type="button" class="modal-close text-white/70 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form action="/admin/users" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-white/70 mb-2">Username</label>
+                        <input type="text" name="username" required minlength="3"
+                               class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
+                    </div>
+                    <div>
+                        <label class="block text-white/70 mb-2">Email</label>
+                        <input type="email" name="email" required
+                               class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
+                    </div>
+                    <div>
+                        <label class="block text-white/70 mb-2">Password</label>
+                        <input type="password" name="password" required minlength="6"
+                               class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
+                    </div>
+                    <div>
+                        <label class="block text-white/70 mb-2">Role</label>
+                        <select name="role" required
+                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white border-0 focus:ring-2 focus:ring-white/50">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" class="modal-close px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="glass-button">
+                            Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-[10px] hidden z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-card w-full max-w-md m-auto relative" onclick="event.stopPropagation();">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white">Edit User</h3>
+                    <button type="button" class="modal-close text-white/70 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form id="editUserForm" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-white/70 mb-2">Username</label>
+                        <input type="text" name="username" id="editUsername" required minlength="3"
+                               class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
+                    </div>
+                    <div>
+                        <label class="block text-white/70 mb-2">Email</label>
+                        <input type="email" name="email" id="editEmail" required
+                               class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
+                    </div>
+                    <div>
+                        <label class="block text-white/70 mb-2">New Password (leave blank to keep current)</label>
+                        <input type="password" name="password" id="editPassword"
+                               class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
+                    </div>
+                    <div>
+                        <label class="block text-white/70 mb-2">Role</label>
+                        <select name="role" id="editRole" required
+                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white border-0 focus:ring-2 focus:ring-white/50">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" class="modal-close px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="glass-button">
+                            Update User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black/50 backdrop-blur-[10px] hidden z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-card w-full max-w-md m-auto relative" onclick="event.stopPropagation();">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white">Confirm Delete</h3>
+                    <button type="button" class="modal-close text-white/70 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="mb-6 text-white">
+                    Are you sure you want to delete user <span id="deleteUserName" class="font-semibold"></span>? 
+                    This action cannot be undone.
+                </div>
+                <form id="deleteUserForm" method="POST" class="flex justify-end gap-4">
+                    <button type="button" class="modal-close px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-red-400/30 text-white hover:bg-red-500/40 transition-colors">
+                        Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Show modal function
+            function showModal(modalId) {
+                const $modal = $(`#${modalId}`);
+                $modal.removeClass('hidden');
+                $('body').css({
+                    'overflow': 'hidden',
+                    'padding-right': '15px'
+                });
+            }
+
+            // Hide modal function
+            function hideModal($modal) {
+                $modal.addClass('hidden');
+                $('body').css({
+                    'overflow': '',
+                    'padding-right': ''
+                });
+            }
+
+            // Create User Modal
+            $('[data-modal-target="createUserModal"]').on('click', function() {
+                showModal('createUserModal');
+            });
+
+            // Edit User Modal
+            $('[data-modal-target="editUserModal"]').on('click', function() {
+                const userId = $(this).data('user-id');
+                const username = $(this).data('username');
+                const email = $(this).data('email');
+                const role = $(this).data('role');
+
+                $('#editUserForm').attr('action', `/admin/users/${userId}/update`);
+                $('#editUsername').val(username);
+                $('#editEmail').val(email);
+                $('#editRole').val(role);
+                $('#editPassword').val('');
+
+                showModal('editUserModal');
+            });
+
+            // Delete User Modal
+            $('[data-modal-target="deleteConfirmModal"]').on('click', function() {
+                const userId = $(this).data('user-id');
+                const username = $(this).data('username');
+
+                $('#deleteUserForm').attr('action', `/admin/users/${userId}/delete`);
+                $('#deleteUserName').text(username);
+
+                showModal('deleteConfirmModal');
+            });
+
+            // Close button click handler
+            $('.modal-close').on('click', function() {
+                const $modal = $(this).closest('div[id$="Modal"]');
+                hideModal($modal);
+            });
+
+
+            // Cancel button click handler
+            $('.modal button:contains("Cancel")').on('click', function() {
+                const $modal = $(this).closest('.modal');
+                hideModal($modal);
+            });
+
+            // Click outside modal to close
+            $('.modal').on('click', function(event) {
+                // Check if the click was directly on the modal backdrop
+                if (event.target === this) {
+                    hideModal($(this));
+                }
+            });
+
+            // Prevent clicks inside modal from closing it
+            $('.modal .glass-card').on('click', function(event) {
+                event.stopPropagation();
+            });
+
+            // Close on escape key
+            $(document).on('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    $('.modal:not(.hidden)').each(function() {
+                        hideModal($(this));
+                    });
+                }
+            });
+
+            // Auto-hide flash messages
+            setTimeout(function() {
+                $('[role="alert"]').fadeOut(500, function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

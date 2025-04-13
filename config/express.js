@@ -70,14 +70,19 @@ const configureExpress = (app) => {
     // View engine setup
     app.set('view engine', 'ejs');
     app.set('views', path.join(__dirname, '../views'));
+    
+    // Configure express-ejs-layouts
     app.use(expressLayouts);
     app.set('layout', 'layouts/main');
 
     // Layout configuration
     app.use((req, res, next) => {
+        // Only exclude layout for login and register pages
         const noLayoutPaths = ['/login', '/register'];
         if (noLayoutPaths.includes(req.path)) {
             res.locals.layout = false;
+        } else {
+            res.locals.layout = 'layouts/main'; // Ensure main layout is set for other pages
         }
         next();
     });

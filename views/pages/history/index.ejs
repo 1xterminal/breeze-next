@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search History</title>
+  <!-- Include Tailwind CSS from CDN -->
+  <link href="/css/output.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-900 text-gray-100">
+  <!-- Navbar include -->
+  <%- include('../../components/navbar') %>
+
+  <% 
+  // Get most recent weather code if available
+  let latestWeatherCode = null;
+  if (searchHistory && searchHistory.length > 0 && 
+      searchHistory[0].weatherSnapshot && 
+      searchHistory[0].weatherSnapshot.current && 
+      searchHistory[0].weatherSnapshot.current.weatherCode !== undefined) {
+      latestWeatherCode = searchHistory[0].weatherSnapshot.current.weatherCode;
+  }
+  %>
+
+  <% if (latestWeatherCode !== null) { %>
+    <input type="hidden" id="weather-code" value="<%= latestWeatherCode %>" />
+  <% } %>
+
+  <!-- Main content -->
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Header & Actions Row -->
+    <div class="glass-card-sm p-6 mb-6">
+      <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-white">Search History</h1>
+        <% if (searchHistory && searchHistory.length > 0) { %>
+          <form action="/history/clear" method="POST" class="inline">
+            <button type="submit" 
+                    class="glass-button text-sm py-2"
+                    onclick="return confirm('Are you sure you want to clear all search history?')">
+              Clear History
+            </button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (error) { %>
+      <div class="glass-card-sm bg-red-400/30 text-white p-4 rounded-lg mb-6">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <!-- History Content -->
+    <% if (searchHistory && searchHistory.length > 0) { %>
+      <div class="glass-card p-6">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="text-white/80 text-lg font-medium">Swipe to see more</div>
+          <div class="text-white/60 text-sm">
+            <span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7" />
+              </svg>
+              Scroll
+            </span>
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto pb-4 -mx-2 px-2">
+          <div class="grid grid-flow-col auto-cols-max gap-4" style="grid-template-rows: repeat(4, minmax(0, 1fr));">
+            <% searchHistory.forEach(search => { %>
+              <div class="bg-white/10 rounded-lg p-4 w-[260px]">
+                <div class="flex justify-between items-start mb-3">
+                  <div class="text-white font-medium truncate max-w-[180px]"><%= search.location.name.split(',')[0] %></div>
+                  <form action="/history/delete/<%= search._id %>" method="POST">
+                    <button type="submit" class="text-white/50 hover:text-white/80"
+                            onclick="return confirm('Delete this search entry?')">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+                
+                <% if (search.weatherSnapshot && search.weatherSnapshot.current) { %>
+                  <div class="flex items-center">
+                    <% 
+                    let weatherIcon = '☀️';
+                    if (search.weatherSnapshot.current.weatherCode >= 1 && search.weatherSnapshot.current.weatherCode <= 3) {
+                      weatherIcon = '🌤️';
+                    } else if (search.weatherSnapshot.current.weatherCode >= 45 && search.weatherSnapshot.current.weatherCode <= 48) {
+                      weatherIcon = '🌫️';
+                    } else if ((search.weatherSnapshot.current.weatherCode >= 51 && search.weatherSnapshot.current.weatherCode <= 67) || 
+                              (search.weatherSnapshot.current.weatherCode >= 80 && search.weatherSnapshot.current.weatherCode <= 82)) {
+                      weatherIcon = '🌧️';
+                    } else if ((search.weatherSnapshot.current.weatherCode >= 71 && search.weatherSnapshot.current.weatherCode <= 77) || 
+                              (search.weatherSnapshot.current.weatherCode >= 85 && search.weatherSnapshot.current.weatherCode <= 86)) {
+                      weatherIcon = '❄️';
+                    } else if (search.weatherSnapshot.current.weatherCode >= 95 && search.weatherSnapshot.current.weatherCode <= 99) {
+                      weatherIcon = '⛈️';
+                    }
+                    %>
+                    <div class="text-3xl mr-3"><%= weatherIcon %></div>
+                    <div>
+                      <div class="text-white text-2xl font-light">
+                        <%= search.weatherSnapshot.current.temperature %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                      </div>
+                      <div class="text-white/70 text-sm"><%= search.weatherSnapshot.current.description %></div>
+                    </div>
+                  </div>
+                  <div class="mt-3 pt-3 border-t border-white/10 text-white/60 text-sm flex justify-between">
+                    <div>
+                      <span>Searched:</span>
+                      <span><%= new Date(search.createdAt).toLocaleDateString() %></span>
+                    </div>
+                    <a href="/dashboard/search?city=<%= encodeURIComponent(search.location.name) %>" 
+                       class="text-white hover:underline">
+                      View
+                    </a>
+                  </div>
+                <% } else { %>
+                  <div class="text-white/60 italic">Weather data unavailable</div>
+                  <div class="mt-3 pt-3 border-t border-white/10 text-white/60 text-sm">
+                    <span>Searched on:</span>
+                    <span><%= new Date(search.createdAt).toLocaleDateString() %></span>
+                  </div>
+                <% } %>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add scrollbar styling -->
+      <style>
+        /* Style the scrollbar for Webkit browsers (Chrome, Safari, etc.) */
+        .overflow-x-auto::-webkit-scrollbar {
+          height: 6px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 10px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.4);
+        }
+        
+        /* For Firefox */
+        .overflow-x-auto {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+        }
+      </style>
+    <% } else { %>
+      <div class="glass-card p-8 text-center">
+        <div class="text-white/70 text-lg mb-4">No search history yet</div>
+        <p class="text-white/60 mb-6">Start searching for locations to see your history here</p>
+        <a href="/dashboard" class="glass-button inline-block">Go to Dashboard</a>
+      </div>
+    <% } %>
+  </div>
+
+  <script src="/assets/js/theme.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Enable mousewheel horizontal scrolling
+      const scrollContainer = document.querySelector('.overflow-x-auto');
+      if (scrollContainer) {
+        scrollContainer.addEventListener('wheel', function(e) {
+          if (e.deltaY !== 0) {
+            e.preventDefault();
+            this.scrollLeft += e.deltaY;
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

@@ -4,6 +4,10 @@ const { isAdmin, isUser } = require('../middleware/roles');
 const homeController = require('../controllers/homeController');
 const dashboardRoutes = require('./dashboardRoutes');
 const converterRoutes = require('./converterRoutes');
+const historyRoutes = require('./historyRoutes');
+const { getFavorites } = require('../controllers/favouriteController');
+const { getProfile, updateSettings, changePassword } = require('../controllers/profileController');
+const { getDashboard } = require('../controllers/adminController');
 
 const router = express.Router();
 
@@ -31,45 +35,51 @@ router.get('/register', guestsOnly, (req, res) => {
 // Mount feature routes
 router.use('/dashboard', dashboardRoutes);
 router.use('/converter', converterRoutes);
+router.use('/history', historyRoutes);
 
 // User routes
-router.get('/favorites', isUser, (req, res) => {
-  res.render('pages/dashboard/favorites', { 
-    title: 'Favorites', 
-    user: req.user 
-  });
-});
+router.get('/favorites', isUser, getFavorites);
 
-router.get('/history', isUser, (req, res) => {
-  res.render('pages/dashboard/history', { 
-    title: 'Search History', 
-    user: req.user 
-  });
-});
-
-router.get('/profile', isUser, (req, res) => {
-  res.render('pages/profile/index', { 
-    title: 'Profile', 
-    user: req.user 
-  });
-});
+// Profile routes
+router.get('/profile', isUser, getProfile);
+router.post('/profile/settings', isUser, updateSettings);
+router.post('/profile/change-password', isUser, changePassword);
 
 // Admin routes
-router.get('/admin', isAdmin, (req, res) => {
-  res.render('pages/admin/index', { 
-    title: 'Admin Dashboard', 
-    user: req.user 
-  });
+router.get('/admin', isAdmin, getDashboard);
+
+// Logout route - handle both GET and POST
+router.post('/logout', (req, res) => {
+    // Clear session
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Error destroying session:', err);
+        }
+        // Clear JWT cookie
+        res.clearCookie('token');
+        // Clear any other auth-related cookies
+        res.clearCookie('connect.sid');
+        
+        // Redirect to login
+        res.redirect('/login');
+    });
 });
 
-// Logout route
+// Keep GET route for direct URL access
 router.get('/logout', (req, res) => {
     // Clear session
-    req.session.destroy();
-    // Clear JWT cookie if exists
-    res.clearCookie('token');
-    // Redirect to login
-    res.redirect('/login');
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Error destroying session:', err);
+        }
+        // Clear JWT cookie
+        res.clearCookie('token');
+        // Clear any other auth-related cookies
+        res.clearCookie('connect.sid');
+        
+        // Redirect to login
+        res.redirect('/login');
+    });
 });
 
 module.exports = router;

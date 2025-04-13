@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:css": "npx postcss ./public/css/global.css -o ./public/css/output.css --watch",
-    "dev": "concurrently \"npm run build:css\" \"nodemon index.js\""
+    "dev": "concurrently \"npm run build:css\" \"nodemon index.js\"",
+    "seed:admin": "node models/seeds/adminSeed.js"
   },
   "repository": {
     "type": "git",

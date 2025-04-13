@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Temperature Converter</title>
+  <!-- Include Tailwind CSS from CDN -->
+  <link href="/css/output.css" rel="stylesheet" />
+</head>
+<body>
+    <%- include('../../components/navbar') %>
+
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <h1 class="text-3xl font-bold text-white mb-8 text-center">Temperature Converter</h1>
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Celsius Card -->
+    <div class="glass-card text-center p-6">
+      <div class="mb-4 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10a1 1 0 011-1h1a1 1 0 011 1v6a1 1 0 01-1 1H6a1 1 0 01-1-1v-6z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 6a3 3 0 00-3 3v6a3 3 0 003 3v0a3 3 0 003-3v-6a3 3 0 00-3-3z" />
+        </svg>
+        <span class="text-lg font-semibold text-white">Celsius</span>
+      </div>
+      <div class="temperature-display">
+        <span id="celsius-value" class="text-8xl font-light text-white">32</span>
+        <span class="text-4xl text-white">°C</span>
+      </div>
+      <input 
+        type="number" 
+        id="celsius-input" 
+        class="w-full mt-6 px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border-0 focus:ring-2 focus:ring-white/50 text-center text-2xl"
+        value="32"
+      >
+    </div>
+
+    <!-- Fahrenheit Card -->
+    <div class="glass-card text-center p-6">
+      <div class="mb-4 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10a1 1 0 011-1h1a1 1 0 011 1v3a1 1 0 01-1 1H6a1 1 0 01-1-1v-3z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 6a3 3 0 00-3 3v6a3 3 0 003 3v0a3 3 0 003-3v-6a3 3 0 00-3-3z" />
+        </svg>
+        <span class="text-lg font-semibold text-white">Fahrenheit</span>
+      </div>
+      <div class="temperature-display">
+        <span id="fahrenheit-value" class="text-8xl font-light text-white">89</span>
+        <span class="text-4xl text-white">.6</span>
+        <span class="text-4xl text-white ml-1">°F</span>
+      </div>
+      <input 
+        type="number" 
+        id="fahrenheit-input" 
+        class="w-full mt-6 px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border-0 focus:ring-2 focus:ring-white/50 text-center text-2xl"
+        value="89.6"
+      >
+    </div>
+
+    <!-- Kelvin Card -->
+    <div class="glass-card text-center p-6">
+      <div class="mb-4 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l2 2m0 0l2-2m-2 2V6M4 14h7m4-3l2 2m0 0l2-2m-2 2V6" />
+        </svg>
+        <span class="text-lg font-semibold text-white">Kelvin</span>
+      </div>
+      <div class="temperature-display">
+        <span id="kelvin-value" class="text-8xl font-light text-white">305</span>
+        <span class="text-4xl text-white">.15</span>
+        <span class="text-4xl text-white ml-1">K</span>
+      </div>
+      <input 
+        type="number" 
+        id="kelvin-input" 
+        class="w-full mt-6 px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border-0 focus:ring-2 focus:ring-white/50 text-center text-2xl"
+        value="305.15"
+      >
+    </div>
+  </div>
+
+  <!-- Information Card -->
+  <div class="glass-card mt-8 p-6">
+    <h2 class="text-xl font-semibold text-white mb-2">Information</h2>
+    <p class="text-white/80">
+      The Celsius Scale was invented by a Swedish astronomer, Anders Celsius. The freezing point of water is 0°C and it's boiling point is 100°C.
+    </p>
+  </div>
+</div>
+
+<script src="/assets/js/theme.js"></script>
+
+<script>
+  // Add active class based on weather code if available
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set default weather theme if no weather code is present
+    if (!document.getElementById('weather-code')) {
+      document.body.classList.add('weather-clear');
+    }
+    
+    // Set up temperature conversion
+    const celsiusInput = document.getElementById('celsius-input');
+    const fahrenheitInput = document.getElementById('fahrenheit-input');
+    const kelvinInput = document.getElementById('kelvin-input');
+    
+    const celsiusValue = document.getElementById('celsius-value');
+    const fahrenheitValue = document.getElementById('fahrenheit-value');
+    const kelvinValue = document.getElementById('kelvin-value');
+    
+    // Handle Celsius input
+    celsiusInput.addEventListener('input', function() {
+      const c = parseFloat(this.value);
+      if (!isNaN(c)) {
+        const f = (c * 9/5) + 32;
+        const k = c + 273.15;
+        
+        celsiusValue.textContent = c;
+        fahrenheitValue.textContent = Math.floor(f);
+        fahrenheitInput.value = f.toFixed(1);
+        document.querySelector('#fahrenheit-value + span').textContent = '.' + (f.toFixed(1).split('.')[1] || '0');
+        
+        kelvinValue.textContent = Math.floor(k);
+        kelvinInput.value = k.toFixed(2);
+        document.querySelector('#kelvin-value + span').textContent = '.' + (k.toFixed(2).split('.')[1] || '00');
+      }
+    });
+    
+    // Handle Fahrenheit input
+    fahrenheitInput.addEventListener('input', function() {
+      const f = parseFloat(this.value);
+      if (!isNaN(f)) {
+        const c = (f - 32) * 5/9;
+        const k = c + 273.15;
+        
+        celsiusValue.textContent = Math.round(c);
+        celsiusInput.value = c.toFixed(2);
+        
+        fahrenheitValue.textContent = Math.floor(f);
+        document.querySelector('#fahrenheit-value + span').textContent = '.' + (f.toFixed(1).split('.')[1] || '0');
+        
+        kelvinValue.textContent = Math.floor(k);
+        kelvinInput.value = k.toFixed(2);
+        document.querySelector('#kelvin-value + span').textContent = '.' + (k.toFixed(2).split('.')[1] || '00');
+      }
+    });
+    
+    // Handle Kelvin input
+    kelvinInput.addEventListener('input', function() {
+      const k = parseFloat(this.value);
+      if (!isNaN(k)) {
+        const c = k - 273.15;
+        const f = (c * 9/5) + 32;
+        
+        celsiusValue.textContent = Math.round(c);
+        celsiusInput.value = c.toFixed(2);
+        
+        fahrenheitValue.textContent = Math.floor(f);
+        fahrenheitInput.value = f.toFixed(1);
+        document.querySelector('#fahrenheit-value + span').textContent = '.' + (f.toFixed(1).split('.')[1] || '0');
+        
+        kelvinValue.textContent = Math.floor(k);
+        document.querySelector('#kelvin-value + span').textContent = '.' + (k.toFixed(2).split('.')[1] || '00');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

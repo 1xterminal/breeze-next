@@ -1,4 +1,8 @@
 const axios = require('axios');
+const WeatherCache = require('../models/WeatherCache');
+const SearchHistory = require('../models/SearchHistory');
+const User = require('../models/User');
+const { convertTemperature, getUnitSymbol } = require('../utils/temperatureConverter');
 
 /**
  * Get dashboard page
@@ -7,11 +11,18 @@ const axios = require('axios');
  */
 const getDashboard = async (req, res) => {
   try {
+    // Get user's recent searches
+    const recentSearches = await SearchHistory.getUserHistory(req.user.id, 5);
+    
+    // Get fresh user data with settings
+    const user = await User.findById(req.user.id);
+
     return res.render('pages/dashboard/index', {
       title: 'Weather Dashboard',
-      user: req.user,
+      user: user,
       weather: null,
       error: null,
+      recentSearches,
       layout: 'layouts/main'
     });
   } catch (error) {
@@ -21,6 +32,7 @@ const getDashboard = async (req, res) => {
       user: req.user,
       weather: null,
       error: 'Error loading dashboard',
+      recentSearches: [],
       layout: 'layouts/main'
     });
   }
@@ -44,6 +56,10 @@ const searchWeather = async (req, res) => {
         layout: 'layouts/main'
       });
     }
+
+    // Get user's preferred temperature unit
+    const user = await User.findById(req.user.id).select('settings');
+    const preferredUnit = user?.settings?.temperatureUnit || 'celsius';
 
     // Step 1: Get coordinates from Nominatim API
     const geocodeResponse = await axios.get(`${process.env.GEOCODE_API_URL}/search`, {
@@ -69,35 +85,66 @@ const searchWeather = async (req, res) => {
     }
 
     const { lat, lon, display_name } = geocodeResponse.data[0];
+    console.log('Geocode Response:', { lat, lon, display_name });
+    
+    const locationData = {
+      name: display_name,
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lon)
+    };
+    console.log('Location Data:', locationData);
 
-    // Step 2: Get weather forecast from OpenMeteo API
-    const weatherResponse = await axios.get(process.env.WEATHER_API_URL, {
-      params: {
-        latitude: lat,
-        longitude: lon,
-        timezone: 'auto',
-        current: 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation',
-        hourly: 'temperature_2m,precipitation_probability,weather_code',
-        daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max',
-        forecast_days: 7
-      },
-      timeout: parseInt(process.env.API_TIMEOUT)
-    });
+    // Check cache first with preferred unit
+    let weatherData = await WeatherCache.getOrCreate(locationData, preferredUnit);
 
-    // Process weather data
-    const weatherData = processWeatherData(weatherResponse.data, display_name);
+    if (!weatherData) {
+      // If not in cache, fetch from API
+      const weatherResponse = await axios.get(process.env.WEATHER_API_URL, {
+        params: {
+          latitude: lat,
+          longitude: lon,
+          timezone: 'auto',
+          current: 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation',
+          hourly: 'temperature_2m,precipitation_probability,weather_code',
+          daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max',
+          forecast_days: 7
+        },
+        timeout: parseInt(process.env.API_TIMEOUT)
+      });
 
-    // Save search to history if user is logged in
-    if (req.user) {
-      // This would be implemented in a future version to save search history
-      // await saveSearchToHistory(req.user.id, city, lat, lon);
+      // Process weather data with preferred unit
+      weatherData = processWeatherData(weatherResponse.data, display_name, lat, lon, preferredUnit);
+
+      // Save to cache with the temperature unit
+      await WeatherCache.create({
+        location: locationData,
+        weatherData,
+        temperatureUnit: preferredUnit
+      });
     }
+
+    // Save to search history
+    await SearchHistory.addSearch(req.user.id, locationData, weatherData);
+
+    // Get recent searches for display
+    const recentSearches = await SearchHistory.getUserHistory(req.user.id, 5);
+
+    // Get fresh user data for the view
+    const updatedUser = await User.findById(req.user.id);
+
+    console.log('Rendering dashboard with weather data:', {
+      location: weatherData.current.location,
+      temperature: weatherData.current.temperature,
+      unit: weatherData.units.temperature,
+      preferredUnit
+    });
 
     return res.render('pages/dashboard/index', {
       title: 'Weather Dashboard',
-      user: req.user,
+      user: updatedUser,
       weather: weatherData,
       searchQuery: city,
+      recentSearches,
       error: null,
       layout: 'layouts/main'
     });
@@ -113,6 +160,7 @@ const searchWeather = async (req, res) => {
       user: req.user,
       weather: null,
       searchQuery: req.query.city,
+      recentSearches: [],
       error: errorMessage,
       layout: 'layouts/main'
     });
@@ -123,9 +171,12 @@ const searchWeather = async (req, res) => {
  * Process the raw weather data from OpenMeteo API
  * @param {Object} data - The raw API response
  * @param {String} locationName - The display name of the location
+ * @param {Number} lat - The latitude of the location
+ * @param {Number} lon - The longitude of the location
+ * @param {String} preferredUnit - User's preferred temperature unit
  * @returns {Object} - Processed weather data
  */
-const processWeatherData = (data, locationName) => {
+const processWeatherData = (data, locationName, lat, lon, preferredUnit = 'celsius') => {
   // Weather code mapping for readable descriptions
   const weatherCodes = {
     0: 'Clear sky',
@@ -161,7 +212,9 @@ const processWeatherData = (data, locationName) => {
   // Process current weather
   const current = {
     location: locationName,
-    temperature: Math.round(data.current.temperature_2m),
+    latitude: parseFloat(lat),
+    longitude: parseFloat(lon),
+    temperature: convertTemperature(data.current.temperature_2m, 'celsius', preferredUnit),
     humidity: data.current.relative_humidity_2m,
     windSpeed: Math.round(data.current.wind_speed_10m),
     windDirection: data.current.wind_direction_10m,
@@ -169,7 +222,7 @@ const processWeatherData = (data, locationName) => {
     weatherCode: data.current.weather_code,
     description: weatherCodes[data.current.weather_code] || 'Unknown',
     units: {
-      temperature: data.current_units.temperature_2m,
+      temperature: getUnitSymbol(preferredUnit),
       windSpeed: data.current_units.wind_speed_10m,
       precipitation: data.current_units.precipitation
     }
@@ -187,7 +240,7 @@ const processWeatherData = (data, locationName) => {
       const time = new Date(data.hourly.time[index]);
       hourlyForecast.push({
         time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        temperature: Math.round(data.hourly.temperature_2m[index]),
+        temperature: convertTemperature(data.hourly.temperature_2m[index], 'celsius', preferredUnit),
         precipitationProbability: data.hourly.precipitation_probability[index],
         weatherCode: data.hourly.weather_code[index],
         description: weatherCodes[data.hourly.weather_code[index]] || 'Unknown'
@@ -200,8 +253,8 @@ const processWeatherData = (data, locationName) => {
     const date = new Date(time);
     return {
       date: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-      maxTemp: Math.round(data.daily.temperature_2m_max[index]),
-      minTemp: Math.round(data.daily.temperature_2m_min[index]),
+      maxTemp: convertTemperature(data.daily.temperature_2m_max[index], 'celsius', preferredUnit),
+      minTemp: convertTemperature(data.daily.temperature_2m_min[index], 'celsius', preferredUnit),
       precipitationSum: data.daily.precipitation_sum[index],
       precipitationProbability: data.daily.precipitation_probability_max[index],
       weatherCode: data.daily.weather_code[index],
@@ -213,7 +266,10 @@ const processWeatherData = (data, locationName) => {
     current,
     hourlyForecast,
     dailyForecast,
-    units: data.daily_units
+    units: {
+      ...data.daily_units,
+      temperature: getUnitSymbol(preferredUnit)
+    }
   };
 };
 
