@@ -1,0 +1,37 @@
+<%- include('../../layouts/header') %>
+
+<div class="error-container">
+    <div class="error-content">
+        <h1>403</h1>
+        <h2>Access Forbidden</h2>
+        <p>Sorry, you don't have permission to access this page.</p>
+        <a href="/" class="btn btn-primary">Go Home</a>
+    </div>
+</div>
+
+<style>
+    .error-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80vh;
+        text-align: center;
+    }
+    
+    .error-content h1 {
+        font-size: 6rem;
+        color: #dc3545;
+        margin-bottom: 1rem;
+    }
+    
+    .error-content h2 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .error-content p {
+        margin-bottom: 2rem;
+    }
+</style>
+
+<%- include('../../layouts/footer') %> 

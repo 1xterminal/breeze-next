@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
 :root {
     --primary-color: #333;
@@ -9,46 +8,36 @@
     --card-background: rgba(255, 255, 255, 0.2);
     --shadow-color: rgba(0, 0, 0, 0.1);
     --border-color: rgba(255, 255, 255, 0.3);
+
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    transition: color 0.5s;
+@property --gradColorStart {
+    syntax: '<color>';
+    initial-value: #8e9eab;
+    inherits: false;
 }
 
-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background: linear-gradient(135deg, #8e9eab, #eef2f3);
+@property --gradColorEnd {
+    syntax: '<color>';
+    initial-value: #eef2f3;
+    inherits: false;
+}
+
+.gradient-main {
+    background: linear-gradient(135deg, var(--gradColorStart), var(--gradColorEnd));
     background-size: 200%;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-    
-/* Card */
-.card {
-    background: var(--card-background);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow:
-      0 8px 20px hsla(0, 0%, 0%, 0.2),
-      inset 0 4px 60px hsla(0, 0%, 100%, 0.2);
-    max-width: 500px;
-    width: 90%;
-    color: var(--text-color);
-    text-align: center;
-  }
+    background-attachment: fixed;
+    animation: gradient-animation 40s ease infinite;
+}
 
-  .card h2 {
-    margin-bottom: 1rem;
-    font-size: 1.8rem;
-  }
-
-  .card p {
-    font-size: 1rem;
-    line-height: 1.5;
-  }
+@keyframes gradient-animation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
