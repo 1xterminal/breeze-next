@@ -28,11 +28,11 @@ router.get('/register', guestsOnly, (req, res) => {
   });
 });
 
-// Mount dashboard routes
+// Mount feature routes
 router.use('/dashboard', dashboardRoutes);
 router.use('/converter', converterRoutes);
 
-// Other user routes
+// User routes
 router.get('/favorites', isUser, (req, res) => {
   res.render('pages/dashboard/favorites', { 
     title: 'Favorites', 
@@ -47,13 +47,6 @@ router.get('/history', isUser, (req, res) => {
   });
 });
 
-router.get('/converter', isUser, (req, res) => {
-  res.render('pages/dashboard/converter', { 
-    title: 'Temperature Converter', 
-    user: req.user 
-  });
-});
-
 router.get('/profile', isUser, (req, res) => {
   res.render('pages/profile/index', { 
     title: 'Profile', 
@@ -61,7 +54,7 @@ router.get('/profile', isUser, (req, res) => {
   });
 });
 
-// Admin routes - require admin role
+// Admin routes
 router.get('/admin', isAdmin, (req, res) => {
   res.render('pages/admin/index', { 
     title: 'Admin Dashboard', 
@@ -69,6 +62,7 @@ router.get('/admin', isAdmin, (req, res) => {
   });
 });
 
+// Logout route
 router.get('/logout', (req, res) => {
     // Clear session
     req.session.destroy();
