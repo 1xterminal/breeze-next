@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Details</title>
+  <!-- Include Tailwind CSS from CDN -->
+  <link href="/css/output.css" rel="stylesheet" />
+</head>
+<body>
+    <%- include('../../components/navbar') %>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="space-y-6">
+        <!-- User Profile -->
+        <div class="glass-card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">User Profile</h2>
+                <a href="/admin" class="text-white/80 hover:text-white transition-colors">Back to Dashboard</a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <div class="text-white/70 text-sm mb-1">Username</div>
+                        <div class="text-white text-lg"><%= targetUser.username %></div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <div class="text-white/70 text-sm mb-1">Email</div>
+                        <div class="text-white text-lg"><%= targetUser.email %></div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <div class="text-white/70 text-sm mb-1">Role</div>
+                        <div class="text-white text-lg capitalize"><%= targetUser.role %></div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <div class="text-white/70 text-sm mb-1">Member Since</div>
+                        <div class="text-white text-lg"><%= new Date(targetUser.createdAt).toLocaleDateString() %></div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <div class="text-white/70 text-sm mb-1">Last Login</div>
+                        <div class="text-white text-lg"><%= new Date(targetUser.lastLoginAt).toLocaleString() %></div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-4">
+                        <div class="text-white/70 text-sm mb-1">Temperature Unit</div>
+                        <div class="text-white text-lg capitalize"><%= targetUser.settings?.temperatureUnit || 'celsius' %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorite Locations -->
+        <div class="glass-card">
+            <h2 class="text-2xl font-bold text-white mb-6">Favorite Locations</h2>
+            <% if (targetUser.favorites && targetUser.favorites.length > 0) { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <% targetUser.favorites.forEach(favorite => { %>
+                        <div class="bg-white/10 rounded-lg p-4">
+                            <div class="text-white font-medium mb-2"><%= favorite.name %></div>
+                            <div class="text-white/70 text-sm">
+                                Lat: <%= favorite.latitude.toFixed(4) %>, Lon: <%= favorite.longitude.toFixed(4) %>
+                            </div>
+                            <div class="text-white/60 text-xs mt-2">
+                                Added: <%= new Date(favorite.createdAt).toLocaleDateString() %>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="text-white/70 text-center py-8">No favorite locations saved</div>
+            <% } %>
+        </div>
+
+        <!-- Recent Searches -->
+        <div class="glass-card">
+            <h2 class="text-2xl font-bold text-white mb-6">Recent Searches</h2>
+            <% if (targetUser.searchHistory && targetUser.searchHistory.length > 0) { %>
+                <div class="space-y-4">
+                    <% targetUser.searchHistory.slice(0, 10).forEach(search => { %>
+                        <div class="bg-white/10 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="text-white font-medium"><%= search.name %></div>
+                                <div class="text-white/60 text-sm"><%= new Date(search.timestamp).toLocaleString() %></div>
+                            </div>
+                            <div class="text-white/70 text-sm">
+                                Lat: <%= search.latitude.toFixed(4) %>, Lon: <%= search.longitude.toFixed(4) %>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="text-white/70 text-center py-8">No search history available</div>
+            <% } %>
+        </div>
+    </div>
+</div> 
+</body>
+</html>

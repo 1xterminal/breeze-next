@@ -9,178 +9,355 @@
   <title><%= typeof title !== 'undefined' ? title : 'Breeze Weather Dashboard' %></title>
   <link href="/css/output.css" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-gray-50">
+<body class="min-h-screen gradient-main bg-[length:200%] animate-[gradient-animation_40s_ease_infinite] bg-fixed">
   <%- include('../../components/navbar') %>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="bg-white/20 backdrop-blur-[10px] rounded-lg shadow-md p-6 mb-8">
-      <h1 class="text-2xl font-bold text-white mb-6">Weather Dashboard</h1>
-      
-      <!-- Search Form -->
-      <div class="mb-8">
-        <form action="/dashboard/search" method="GET" class="flex flex-col gap-4 md:flex-row md:items-end">
-          <div class="flex-grow">
-            <label for="city" class="block text-sm font-medium text-white mb-1">Search Location</label>
-            <input 
-              type="text" 
-              id="city" 
-              name="city" 
-              class="w-full px-4 py-2 bg-white/20 border border-white/30 rounded-md focus:ring-white/50 focus:border-white/50 text-white placeholder-white/70"
-              placeholder="Enter city name (e.g., London, New York, Tokyo)" 
-              value="<%= locals.searchQuery || '' %>"
-              required
-            >
+  <% if (weather && weather.current && weather.current.weatherCode !== undefined) { %>
+    <input type="hidden" id="weather-code" value="<%= weather.current.weatherCode %>" />
+  <% } %>
+
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <!-- Search Form -->
+    <div class="glass-card-sm p-6">
+      <form action="/dashboard/search" method="GET" class="flex gap-4">
+        <input type="text" 
+               name="city" 
+               placeholder="Enter city name..." 
+               class="flex-1 px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/70 border-0 focus:ring-2 focus:ring-white/50"
+               value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>">
+        <button type="submit" 
+                class="glass-button">
+          Search
+        </button>
+      </form>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="glass-card-sm bg-red-400/30 text-white p-4 rounded-lg">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <% if (typeof weather !== 'undefined' && weather) { %>
+      <!-- Current Weather -->
+      <div class="glass-card p-6">
+        <h2 class="text-2xl font-bold text-white mb-4">Current Weather in <%= weather.current.location %></h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="text-center">
+            <div class="text-4xl font-bold text-white">
+              <%= weather.current.temperature %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+            </div>
+            <div class="text-white/80"><%= weather.current.description %></div>
           </div>
-          <button 
-            type="submit"
-            class="px-6 py-2 bg-white/30 text-white font-medium rounded-md hover:bg-white/40 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors"
-          >
-            Search
+          <div class="text-center">
+            <div class="text-4xl font-bold text-white"><%= weather.current.humidity %>%</div>
+            <div class="text-white/80">Humidity</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl font-bold text-white"><%= weather.current.windSpeed %> km/h</div>
+            <div class="text-white/80">Wind Speed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- After the search form and before the weather display -->
+      <div class="flex justify-end mb-4">
+        <!-- Debug output -->
+        <% if (weather && weather.current) { %>
+          <div class="hidden">
+            Debug Data:
+            Location: <%= weather.current.location %>
+            Latitude: <%= weather.current.latitude %>
+            Longitude: <%= weather.current.longitude %>
+          </div>
+        <% } %>
+        
+        <form action="/favorites/add" method="POST" class="inline">
+          <input type="hidden" name="name" value="<%= weather.current.location %>">
+          <input type="hidden" name="latitude" value="<%= weather.current.latitude ? weather.current.latitude.toString() : weather.location?.latitude?.toString() %>">
+          <input type="hidden" name="longitude" value="<%= weather.current.longitude ? weather.current.longitude.toString() : weather.location?.longitude?.toString() %>">
+          <button type="submit" class="glass-button flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            Add to Favorites
           </button>
         </form>
       </div>
 
-      <% if (locals.error) { %>
-        <div class="bg-red-400/50 border border-red-400/50 text-white px-4 py-3 rounded mb-6" role="alert">
-          <span class="block sm:inline"><%= locals.error %></span>
-        </div>
-      <% } %>
-
-      <% if (locals.weather) { %>
-        <!-- Current Weather Section -->
-        <div class="bg-white/20 backdrop-blur-[10px] text-white rounded-xl p-6 mb-8">
-          <div class="flex flex-col md:flex-row md:justify-between items-center mb-6">
-            <div>
-              <h2 class="text-xl md:text-2xl font-bold"><%= locals.weather.current.location %></h2>
-              <p class="text-lg">
-                <%= new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
-              </p>
-            </div>
-            <div class="text-center mt-4 md:mt-0">
-              <div class="text-4xl md:text-5xl font-bold">
-                <%= locals.weather.current.temperature %>&deg;<%= locals.weather.current.units.temperature %>
-              </div>
-              <p class="text-xl"><%= locals.weather.current.description %></p>
-            </div>
+      <!-- Add Favorites Section before charts -->
+      <!-- <% if (user.favorites && user.favorites.length > 0) { %>
+        <div class="glass-card p-6 mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-white">Favorite Locations</h3>
+            <a href="/favorites" class="glass-button text-sm">View All</a>
           </div>
-          
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-white/20 rounded-lg p-3 text-center backdrop-blur-[10px]">
-              <p class="text-sm">Humidity</p>
-              <p class="text-xl font-bold"><%= locals.weather.current.humidity %>%</p>
-            </div>
-            <div class="bg-white/20 rounded-lg p-3 text-center backdrop-blur-[10px]">
-              <p class="text-sm">Wind Speed</p>
-              <p class="text-xl font-bold"><%= locals.weather.current.windSpeed %> <%= locals.weather.current.units.windSpeed %></p>
-            </div>
-            <div class="bg-white/20 rounded-lg p-3 text-center backdrop-blur-[10px]">
-              <p class="text-sm">Wind Direction</p>
-              <p class="text-xl font-bold"><%= locals.weather.current.windDirection %>&deg;</p>
-            </div>
-            <div class="bg-white/20 rounded-lg p-3 text-center backdrop-blur-[10px]">
-              <p class="text-sm">Precipitation</p>
-              <p class="text-xl font-bold"><%= locals.weather.current.precipitation %> <%= locals.weather.current.units.precipitation %></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Hourly Forecast Section -->
-        <div class="mb-8">
-          <h3 class="text-xl font-semibold mb-4 text-white">Hourly Forecast</h3>
-          <div class="overflow-auto pb-4">
-            <div class="flex gap-4 min-w-max">
-              <% locals.weather.hourlyForecast.forEach(hour => { %>
-                <div class="bg-white/20 backdrop-blur-[10px] rounded-lg p-3 text-center min-w-[100px] text-white">
-                  <p class="text-sm font-medium"><%= hour.time %></p>
-                  <p class="text-xl font-bold my-1"><%= hour.temperature %>&deg;</p>
-                  <p class="text-xs text-white/80"><%= hour.precipitationProbability %>% rain</p>
-                  <p class="text-sm"><%= hour.description %></p>
-                </div>
-              <% }); %>
-            </div>
-          </div>
-        </div>
-
-        <!-- Daily Forecast Section -->
-        <div>
-          <h3 class="text-xl font-semibold mb-4 text-white">7-Day Forecast</h3>
-          <div class="grid gap-4">
-            <% locals.weather.dailyForecast.forEach(day => { %>
-              <div class="bg-white/20 backdrop-blur-[10px] rounded-lg p-4 grid grid-cols-3 md:grid-cols-5 items-center text-white">
-                <div class="font-medium"><%= day.date %></div>
-                <div class="text-center">
-                  <span class="text-white/80">Min</span>
-                  <div class="font-bold"><%= day.minTemp %>&deg;</div>
-                </div>
-                <div class="text-center">
-                  <span class="text-white/80">Max</span>
-                  <div class="font-bold"><%= day.maxTemp %>&deg;</div>
-                </div>
-                <div class="text-center hidden md:block">
-                  <span class="text-white/80">Rain</span>
-                  <div class="font-bold"><%= day.precipitationProbability %>%</div>
-                </div>
-                <div class="hidden md:block">
-                  <span class="text-white/80">Conditions</span>
-                  <div><%= day.description %></div>
-                </div>
+            <% user.favorites.slice(0, 4).forEach(favorite => { %>
+              <div class="bg-white/10 rounded-lg p-4 relative group">
+                <form action="/favorites/remove" method="POST" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <input type="hidden" name="favoriteId" value="<%= favorite._id %>">
+                  <button type="submit" class="text-white/50 hover:text-white/80 p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </form>
+                <a href="/dashboard/search?city=<%= encodeURIComponent(favorite.name) %>" class="block">
+                  <div class="text-white font-medium truncate"><%= favorite.name.split(',')[0] %></div>
+                  <div class="text-white/60 text-sm mt-1">
+                    <%= new Date(favorite.createdAt).toLocaleDateString() %>
+                  </div>
+                </a>
               </div>
             <% }); %>
           </div>
         </div>
-      <% } else if (!locals.error) { %>
-        <!-- Initial/No Results State -->
-        <div class="bg-white/20 backdrop-blur-[10px] border border-white/30 rounded-lg p-6 text-center">
-          <h3 class="text-xl font-medium text-white mb-4">Welcome to Your Weather Dashboard</h3>
-          <p class="text-white/80 mb-6">
-            Search for a city above to see detailed weather information. You'll get hourly and daily forecasts for the next 7 days.
-          </p>
-          <div class="flex flex-wrap justify-center gap-4 text-sm text-white">
-            <div class="bg-white/20 px-3 py-1 rounded-full">Temperature</div>
-            <div class="bg-white/20 px-3 py-1 rounded-full">Precipitation</div>
-            <div class="bg-white/20 px-3 py-1 rounded-full">Wind Speed</div>
-            <div class="bg-white/20 px-3 py-1 rounded-full">Humidity</div>
-            <div class="bg-white/20 px-3 py-1 rounded-full">Weather Conditions</div>
+      <% } %> -->
+
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Temperature Chart -->
+        <div class="glass-card p-6">
+          <h3 class="text-xl font-semibold text-white mb-4">Temperature Forecast</h3>
+          <div class="relative" style="min-height: 300px;">
+            <canvas id="temperatureChart"></canvas>
           </div>
         </div>
+
+        <!-- Precipitation Chart -->
+        <div class="glass-card p-6">
+          <h3 class="text-xl font-semibold text-white mb-4">Precipitation Probability</h3>
+          <div class="relative" style="min-height: 300px;">
+            <canvas id="precipitationChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Wind Speed Chart -->
+        <div class="glass-card p-6">
+          <h3 class="text-xl font-semibold text-white mb-4">Wind Speed</h3>
+          <div class="relative" style="min-height: 300px;">
+            <canvas id="windChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Daily Forecast -->
+        <% if (weather.dailyForecast && weather.dailyForecast.length > 0) { %>
+          <div class="glass-card p-6">
+            <h3 class="text-xl font-semibold text-white mb-4">7-Day Forecast</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <% weather.dailyForecast.forEach(day => { %>
+                <div class="text-center p-4 bg-white/10 rounded-lg">
+                  <div class="text-white font-medium"><%= day.date %></div>
+                  <div class="text-2xl font-bold text-white mt-2">
+                    <%= day.maxTemp %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                  </div>
+                  <div class="text-white/80">
+                    <%= day.minTemp %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                  </div>
+                  <div class="text-sm text-white/80 mt-2"><%= day.description %></div>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Chart.js Script -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script>
+        const weatherData = JSON.parse('<%- JSON.stringify(weather.hourlyForecast) %>');
+        const chartLabels = weatherData.map(hour => hour.time);
+        const windSpeed = JSON.parse('<%- JSON.stringify(weather.current.windSpeed) %>');
+        const precipitation = weatherData.map(hour => hour.precipitationProbability);
+
+        function createChart(id, data, options) {
+          const ctx = document.getElementById(id);
+          if (!ctx) {
+            console.error(`Canvas element with id ${id} not found`);
+            return null;
+          }
+
+          const chartConfig = {
+            type: options.type || 'line',
+            data: {
+              labels: chartLabels,
+              datasets: [{
+                label: options.label || '',
+                data: data,
+                borderColor: options.color,
+                backgroundColor: options.gradient ? function(context) {
+                  const chart = context.chart;
+                  const {ctx, chartArea} = chart;
+                  if (!chartArea) return null;
+                  
+                  const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                  gradient.addColorStop(0, options.color.replace('1)', '0.1)'));
+                  gradient.addColorStop(1, options.color.replace('1)', '0.5)'));
+                  return gradient;
+                } : options.color,
+                borderWidth: options.type === 'bar' ? 1 : 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHitRadius: 10,
+                ...(options.type === 'bar' && { borderRadius: 4 })
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  mode: 'index',
+                  intersect: false,
+                  callbacks: {
+                    label: function(context) {
+                      let label = context.dataset.label || '';
+                      if (label) {
+                        label += ': ';
+                      }
+                      if (context.parsed.y !== null) {
+                        label += context.parsed.y;
+                        if (options.unit) {
+                          label += options.unit;
+                        }
+                      }
+                      return label;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: options.max || undefined,
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.7)'
+                  }
+                },
+                x: {
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    maxRotation: 45,
+                    minRotation: 45
+                  }
+                }
+              }
+            }
+          };
+
+          return new Chart(ctx, chartConfig);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+          // Create Temperature Chart
+          createChart('temperatureChart', 
+            weatherData.map(hour => hour.temperature),
+            {
+              color: 'rgba(255, 99, 132, 1)',
+              gradient: true,
+              label: 'Temperature',
+              unit: '°<%= locals.user?.settings?.temperatureUnit === "fahrenheit" ? "F" : locals.user?.settings?.temperatureUnit === "kelvin" ? "K" : "C" %>'
+            }
+          );
+
+          // Create Precipitation Chart
+          createChart('precipitationChart',
+            precipitation,
+            {
+              type: 'bar',
+              color: 'rgba(54, 162, 235, 1)',
+              gradient: true,
+              label: 'Precipitation',
+              unit: '%',
+              max: 100
+            }
+          );
+
+          // Create Wind Speed Chart
+          createChart('windChart',
+            Array(24).fill(windSpeed),
+            {
+              color: 'rgba(75, 192, 192, 1)',
+              gradient: true,
+              label: 'Wind Speed',
+              unit: ' km/h'
+            }
+          );
+        });
+      </script>
+    <% } %>
+
+    <% if (typeof recentSearches !== 'undefined' && recentSearches && recentSearches.length > 0) { %>
+      <!-- Recent Searches -->
+      <div class="glass-card p-6">
+        <h3 class="text-xl font-semibold text-white mb-4">Recent Searches</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <% recentSearches.forEach(search => { %>
+            <a href="/dashboard/search?city=<%= encodeURIComponent(search.location.name) %>" 
+               class="text-center p-4 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+              <div class="text-white font-medium"><%= search.location.name.split(',')[0] %></div>
+              <div class="text-2xl font-bold text-white mt-2">
+                <%= search.weatherSnapshot.current.temperature %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+              </div>
+              <div class="text-sm text-white/80 mt-2">
+                <%= search.weatherSnapshot.current.description %>
+              </div>
+            </a>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Favorites Preview -->
+      <% if (user.favorites && user.favorites.length > 0) { %>
+        <div class="glass-card p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-white">Favorite Locations</h3>
+            <a href="/favorites" class="text-white/70 hover:text-white text-sm">View All</a>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <% user.favorites.slice(0, 4).forEach(favorite => { %>
+              <a href="/dashboard/search?city=<%= encodeURIComponent(favorite.name) %>" 
+                 class="block p-4 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+                <div class="flex items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-white/70 flex-shrink-0 mt-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  <div>
+                    <div class="text-white font-medium truncate"><%= favorite.name %></div>
+                    <div class="text-white/60 text-sm mt-1">
+                      <%= favorite.latitude.toFixed(2) %>°, <%= favorite.longitude.toFixed(2) %>°
+                    </div>
+                  </div>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+          <% if (user.favorites.length > 4) { %>
+            <div class="text-center mt-4">
+              <a href="/favorites" class="glass-button inline-flex items-center">
+                View All <%= user.favorites.length %> Favorites
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </a>
+            </div>
+          <% } %>
+        </div>
       <% } %>
-    </div>
+    <% } %>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const scrollContainer = document.querySelector('.overflow-auto');
-      if (scrollContainer) {
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        scrollContainer.addEventListener('mousedown', (e) => {
-          isDown = true;
-          scrollContainer.classList.add('grabbing');
-          startX = e.pageX - scrollContainer.offsetLeft;
-          scrollLeft = scrollContainer.scrollLeft;
-        });
-
-        scrollContainer.addEventListener('mouseleave', () => {
-          isDown = false;
-          scrollContainer.classList.remove('grabbing');
-        });
-
-        scrollContainer.addEventListener('mouseup', () => {
-          isDown = false;
-          scrollContainer.classList.remove('grabbing');
-        });
-
-        scrollContainer.addEventListener('mousemove', (e) => {
-          if (!isDown) return;
-          e.preventDefault();
-          const x = e.pageX - scrollContainer.offsetLeft;
-          const walk = (x - startX) * 2; // Adjust scroll speed as needed
-          scrollContainer.scrollLeft = scrollLeft - walk;
-        });
-      }
-    });
-  </script>
+  <script src="/assets/js/theme.js"></script>
 </body>
 </html>

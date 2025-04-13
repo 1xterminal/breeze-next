@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
 :root {
     --primary-color: #333;
@@ -8,7 +9,11 @@
     --card-background: rgba(255, 255, 255, 0.2);
     --shadow-color: rgba(0, 0, 0, 0.1);
     --border-color: rgba(255, 255, 255, 0.3);
+    --logo-invert: 0;
+}
 
+* {
+    transition: color 0.5s;
 }
 
 @property --gradColorStart {
@@ -28,6 +33,43 @@
     background-size: 200%;
     background-attachment: fixed;
     animation: gradient-animation 40s ease infinite;
+    transition: --gradColorStart 1s, --gradColorEnd 1s;
+}
+
+/* Weather-based background styles */
+.weather-clear {
+    --gradColorStart: #43A9F1;
+    --gradColorEnd: #3890F4;
+    --logo-invert: 1; /* Light logo for dark backgrounds */
+    color: var(--text-color);
+}
+
+.weather-cloudy {
+    --gradColorStart: #8998A9;
+    --gradColorEnd: #697E9B;
+    --logo-invert: 1; /* Light logo for dark backgrounds */
+    color: var(--text-color);
+}
+
+.weather-night {
+    --gradColorStart: #0f2027;
+    --gradColorEnd: #0E3589;
+    --logo-invert: 1; /* Light logo for dark backgrounds */
+    color: var(--text-color);
+}
+
+.weather-rain {
+    --gradColorStart: #5B6E83;
+    --gradColorEnd: #2D4259;
+    --logo-invert: 1; /* Light logo for dark backgrounds */
+    color: var(--text-color);
+}
+
+.weather-snow {
+    --gradColorStart: #B0C4DE;
+    --gradColorEnd: #8CA4C3;
+    --logo-invert: 1; /* Light logo for dark backgrounds */
+    color: var(--text-color);
 }
 
 @keyframes gradient-animation {
@@ -40,4 +82,44 @@
     100% {
         background-position: 0% 50%;
     }
+}
+
+/* Glass card styling */
+.glass-card {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow:
+        0 8px 20px hsla(0, 0%, 0%, 0.2),
+        inset 0 4px 60px hsla(0, 0%, 100%, 0.2);
+}
+
+.glass-card-sm {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow:
+        0 4px 10px hsla(0, 0%, 0%, 0.1),
+        inset 0 2px 30px hsla(0, 0%, 100%, 0.1);
+}
+
+/* Button styling */
+.glass-button {
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(5px);
+    border-radius: 50px;
+    padding: 8px 24px;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.glass-button:hover {
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }

@@ -3,6 +3,9 @@ const rateLimit = require('express-rate-limit');
 // Import routes
 const authRoutes = require('../routes/authRoutes');
 const converterRoutes = require('../routes/converterRoutes');
+const historyRoutes = require('../routes/historyRoutes');
+const favouriteRoutes = require('../routes/favouriteRoutes');
+const adminRoutes = require('../routes/adminRoutes');
 
 const configureRoutes = (app) => {
     // Rate limiting for API routes
@@ -17,6 +20,9 @@ const configureRoutes = (app) => {
     app.use('/', require('../routes/index'));
     app.use('/api/auth', authRoutes);
     app.use('/converter', converterRoutes);
+    app.use('/history', historyRoutes);
+    app.use('/favorites', favouriteRoutes);
+    app.use('/admin', adminRoutes);
 
     // 404 handler
     app.use((req, res, next) => {
@@ -27,7 +33,8 @@ const configureRoutes = (app) => {
             });
         }
         res.status(404).render('pages/errors/404', { 
-            title: 'Page Not Found' 
+            title: 'Page Not Found',
+            layout: 'layouts/main'
         });
     });
 };

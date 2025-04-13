@@ -1,4 +1,7 @@
 const axios = require('axios');
+const WeatherCache = require('../models/WeatherCache');
+const { convertTemperature, getUnitSymbol } = require('../utils/temperatureConverter');
+const User = require('../models/User');
 require('dotenv').config();
 
 // Create API clients
@@ -114,37 +117,104 @@ const getWeatherIcon = (code) => {
     return iconMap[code] || 'unknown';
 };
 
-const processWeatherData = (data, locationName) => {
-    const current = {
-        location: locationName,
-        temperature: data.current.temperature_2m,
-        humidity: data.current.relative_humidity_2m,
-        windSpeed: data.current.wind_speed_10m,
-        precipitation: data.current.precipitation,
-        weatherCode: data.current.weather_code,
-        description: getWeatherDescription(data.current.weather_code),
-        icon: getWeatherIcon(data.current.weather_code)
+const processWeatherData = (data, locationName, lat, lon, preferredUnit = 'celsius') => {
+    // Weather code mapping for readable descriptions
+    const weatherCodes = {
+        0: 'Clear sky',
+        1: 'Mainly clear',
+        2: 'Partly cloudy',
+        3: 'Overcast',
+        45: 'Fog',
+        48: 'Depositing rime fog',
+        51: 'Light drizzle',
+        53: 'Moderate drizzle',
+        55: 'Dense drizzle',
+        56: 'Light freezing drizzle',
+        57: 'Dense freezing drizzle',
+        61: 'Slight rain',
+        63: 'Moderate rain',
+        65: 'Heavy rain',
+        66: 'Light freezing rain',
+        67: 'Heavy freezing rain',
+        71: 'Slight snow fall',
+        73: 'Moderate snow fall',
+        75: 'Heavy snow fall',
+        77: 'Snow grains',
+        80: 'Slight rain showers',
+        81: 'Moderate rain showers',
+        82: 'Violent rain showers',
+        85: 'Slight snow showers',
+        86: 'Heavy snow showers',
+        95: 'Thunderstorm',
+        96: 'Thunderstorm with slight hail',
+        99: 'Thunderstorm with heavy hail'
     };
 
-    const forecast = data.hourly.time
-        .slice(1, 6)
-        .map((time, index) => ({
-            time: new Date(time).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            }),
-            temperature: data.hourly.temperature_2m[index + 1],
-            precipitationProbability: data.hourly.precipitation_probability[index + 1],
-            weatherCode: data.hourly.weather_code[index + 1],
-            description: getWeatherDescription(data.hourly.weather_code[index + 1]),
-            icon: getWeatherIcon(data.hourly.weather_code[index + 1])
-        }));
+    // Process current weather
+    const current = {
+        location: locationName,
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lon),
+        temperature: convertTemperature(data.current.temperature_2m, 'celsius', preferredUnit),
+        humidity: data.current.relative_humidity_2m,
+        windSpeed: Math.round(data.current.wind_speed_10m),
+        windDirection: data.current.wind_direction_10m,
+        precipitation: data.current.precipitation,
+        weatherCode: data.current.weather_code,
+        description: weatherCodes[data.current.weather_code] || 'Unknown',
+        units: {
+            temperature: getUnitSymbol(preferredUnit),
+            windSpeed: data.current_units.wind_speed_10m,
+            precipitation: data.current_units.precipitation
+        }
+    };
 
-    return { current, forecast };
+    // Process hourly forecast (next 24 hours)
+    const hourlyForecast = [];
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Start from the current hour and get 24 hours of forecast
+    for (let i = 0; i < 24; i++) {
+        const index = currentHour + i;
+        if (index < data.hourly.time.length) {
+            const time = new Date(data.hourly.time[index]);
+            hourlyForecast.push({
+                time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                temperature: convertTemperature(data.hourly.temperature_2m[index], 'celsius', preferredUnit),
+                precipitationProbability: data.hourly.precipitation_probability[index],
+                weatherCode: data.hourly.weather_code[index],
+                description: weatherCodes[data.hourly.weather_code[index]] || 'Unknown'
+            });
+        }
+    }
+
+    // Process daily forecast
+    const dailyForecast = data.daily.time.map((time, index) => {
+        const date = new Date(time);
+        return {
+            date: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+            maxTemp: convertTemperature(data.daily.temperature_2m_max[index], 'celsius', preferredUnit),
+            minTemp: convertTemperature(data.daily.temperature_2m_min[index], 'celsius', preferredUnit),
+            precipitationSum: data.daily.precipitation_sum[index],
+            precipitationProbability: data.daily.precipitation_probability_max[index],
+            weatherCode: data.daily.weather_code[index],
+            description: weatherCodes[data.daily.weather_code[index]] || 'Unknown'
+        };
+    });
+
+    return {
+        current,
+        hourlyForecast,
+        dailyForecast,
+        units: {
+            ...data.daily_units,
+            temperature: getUnitSymbol(preferredUnit)
+        }
+    };
 };
 
-const fetchWeatherData = async (coords) => {
+const fetchWeatherData = async (coords, preferredUnit = 'celsius') => {
     try {
         const response = await weatherApi.get('/', {
             params: {
@@ -167,7 +237,7 @@ const fetchWeatherData = async (coords) => {
             }
         });
 
-        return processWeatherData(response.data, coords.displayName);
+        return processWeatherData(response.data, coords.displayName, coords.lat, coords.lon, preferredUnit);
     } catch (error) {
         console.error('Weather API Error:', error);
         throw error;
@@ -175,44 +245,127 @@ const fetchWeatherData = async (coords) => {
 };
 
 // Controller functions
-const index = (req, res) => {
-    res.render('pages/index', { 
-        title: 'Weather App - Home',
-        weather: null
-    });
+const index = async (req, res) => {
+    try {
+        res.render('pages/index', {
+            title: 'Home',
+            user: req.user,
+            weather: null
+        });
+    } catch (error) {
+        console.error('Home page error:', error);
+        res.render('pages/index', {
+            title: 'Home',
+            user: req.user,
+            weather: null,
+            error: 'Error loading home page'
+        });
+    }
 };
 
 const getWeather = async (req, res) => {
     try {
         const { city } = req.query;
+        
         if (!city) {
             return res.render('pages/index', {
-                title: 'Weather App - Home',
-                weather: null
+                title: 'Home',
+                user: req.user,
+                weather: null,
+                error: 'Please provide a city name'
             });
         }
 
-        const coords = await getCoordinates(city);
-        const weatherData = await fetchWeatherData(coords);
+        // Get fresh user data with settings
+        const user = req.user ? await User.findById(req.user.id) : null;
+        
+        // Get user's preferred temperature unit if logged in
+        const preferredUnit = user?.settings?.temperatureUnit || 'celsius';
 
-        return res.render('pages/index', {
-            title: `Weather - ${coords.displayName}`,
-            weather: weatherData
+        // Step 1: Get coordinates from Nominatim API
+        const geocodeResponse = await axios.get(`${process.env.GEOCODE_API_URL}/search`, {
+            params: {
+                q: city,
+                format: 'json',
+                limit: 1
+            },
+            headers: {
+                'User-Agent': process.env.APP_USER_AGENT
+            },
+            timeout: parseInt(process.env.API_TIMEOUT)
         });
 
-    } catch (error) {
-        console.error('Weather Service Error:', error);
-        
-        if (error.response?.status === 404) {
-            req.flash('error', 'City not found');
-        } else {
-            req.flash('error', 'Unable to fetch weather data. Please try again.');
+        if (!geocodeResponse.data || geocodeResponse.data.length === 0) {
+            return res.render('pages/index', {
+                title: 'Home',
+                user: req.user,
+                weather: null,
+                error: 'City not found. Please try a different location.'
+            });
+        }
+
+        const { lat, lon, display_name } = geocodeResponse.data[0];
+        const locationData = {
+            name: display_name,
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon)
+        };
+
+        // Check cache first with preferred unit
+        let weatherData = await WeatherCache.getOrCreate(locationData, preferredUnit);
+        console.log('Cache hit:', !!weatherData);
+
+        if (!weatherData) {
+            console.log('Cache miss, fetching from API...'); // Debug log
+            // If not in cache, fetch from API
+            const weatherResponse = await axios.get(process.env.WEATHER_API_URL, {
+                params: {
+                    latitude: locationData.latitude,
+                    longitude: locationData.longitude,
+                    timezone: 'auto',
+                    current: 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation',
+                    hourly: 'temperature_2m,precipitation_probability,weather_code',
+                    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max',
+                    forecast_days: 7
+                },
+                timeout: parseInt(process.env.API_TIMEOUT)
+            });
+
+            // Process weather data with preferred unit
+            weatherData = processWeatherData(weatherResponse.data, display_name, lat, lon, preferredUnit);
+
+            try {
+                // Save to cache with temperature unit
+                const cacheEntry = await WeatherCache.create({
+                    location: locationData,
+                    weatherData,
+                    temperatureUnit: preferredUnit
+                });
+                console.log('Cache created:', cacheEntry._id); // Debug log
+            } catch (cacheError) {
+                console.error('Cache creation error:', cacheError);
+            }
         }
 
         return res.render('pages/index', {
-            title: 'Weather App - Home',
+            title: 'Home',
+            user: user, // Use the fresh user data
+            weather: weatherData,
+            searchQuery: city
+        });
+    } catch (error) {
+        console.error('Weather search error:', error);
+        
+        const errorMessage = error.response?.status === 429 
+            ? 'Too many requests. Please try again later.'
+            : 'Error fetching weather data. Please try again.';
+        
+        return res.render('pages/index', {
+            title: 'Home',
+            user: req.user,
             weather: null,
-            error: 'Unable to fetch weather data'
+            searchQuery: req.query.city,
+            error: errorMessage
         });
     }
 };
@@ -220,34 +373,93 @@ const getWeather = async (req, res) => {
 const apiGetWeather = async (req, res) => {
     try {
         const { city } = req.query;
+        
         if (!city) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'City parameter is required' 
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide a city name'
             });
         }
 
-        const coords = await getCoordinates(city);
-        const weatherData = await fetchWeatherData(coords);
+        // Get fresh user data with settings
+        const user = req.user ? await User.findById(req.user.id) : null;
+        
+        // Get user's preferred temperature unit if logged in
+        const preferredUnit = user?.settings?.temperatureUnit || 'celsius';
 
-        return res.json({
-            success: true,
-            data: weatherData
+        // Step 1: Get coordinates from Nominatim API
+        const geocodeResponse = await axios.get(`${process.env.GEOCODE_API_URL}/search`, {
+            params: {
+                q: city,
+                format: 'json',
+                limit: 1
+            },
+            headers: {
+                'User-Agent': process.env.APP_USER_AGENT
+            },
+            timeout: parseInt(process.env.API_TIMEOUT)
         });
 
-    } catch (error) {
-        console.error('Weather API Error:', error);
-        
-        if (error.response?.status === 404) {
+        if (!geocodeResponse.data || geocodeResponse.data.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'City not found'
             });
         }
 
-        return res.status(500).json({
+        const { lat, lon, display_name } = geocodeResponse.data[0];
+        const locationData = {
+            name: display_name,
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon)
+        };
+
+        // Check cache first with preferred unit
+        let weatherData = await WeatherCache.getOrCreate(locationData, preferredUnit);
+
+        if (!weatherData) {
+            // If not in cache, fetch from API
+            const weatherResponse = await axios.get(process.env.WEATHER_API_URL, {
+                params: {
+                    latitude: locationData.latitude,
+                    longitude: locationData.longitude,
+                    timezone: 'auto',
+                    current: 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation',
+                    hourly: 'temperature_2m,precipitation_probability,weather_code',
+                    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max',
+                    forecast_days: 7
+                },
+                timeout: parseInt(process.env.API_TIMEOUT)
+            });
+
+            // Process weather data with preferred unit
+            weatherData = processWeatherData(weatherResponse.data, display_name, lat, lon, preferredUnit);
+
+            // Save to cache with temperature unit
+            await WeatherCache.create({
+                location: locationData,
+                weatherData,
+                temperatureUnit: preferredUnit
+            });
+        }
+
+        return res.json({
+            success: true,
+            data: weatherData
+        });
+    } catch (error) {
+        console.error('API Weather search error:', error);
+        
+        if (error.response?.status === 429) {
+            return res.status(429).json({
+                success: false,
+                message: 'Too many requests. Please try again later.'
+            });
+        }
+        
+        res.status(500).json({
             success: false,
-            message: 'Unable to fetch weather data'
+            message: 'Error fetching weather data'
         });
     }
 };

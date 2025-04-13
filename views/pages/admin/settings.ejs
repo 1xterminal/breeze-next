@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Settings</title>
+  <link href="/css/output.css" rel="stylesheet" />
+</head>
+<body>
+    <%- include('../../components/navbar') %>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="space-y-6">
+        <!-- API Status -->
+        <div class="glass-card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">API Status</h2>
+                <a href="/admin" class="text-white/80 hover:text-white transition-colors">Back to Dashboard</a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- OpenMeteo API -->
+                <div class="bg-white/10 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">OpenMeteo API</h3>
+                        <div class="px-3 py-1 rounded-full bg-green-500/40 text-white text-sm">Active</div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-white/70">
+                            Endpoint: <%= process.env.WEATHER_API_URL %>
+                        </div>
+                        <div class="text-white/70">
+                            Timeout: <%= process.env.API_TIMEOUT %>ms
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nominatim API -->
+                <div class="bg-white/10 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">Nominatim API</h3>
+                        <div class="px-3 py-1 rounded-full bg-green-500/40 text-white text-sm">Active</div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-white/70">
+                            Endpoint: <%= process.env.GEOCODE_API_URL %>
+                        </div>
+                        <div class="text-white/70">
+                            User Agent: <%= process.env.APP_USER_AGENT %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Stats -->
+        <div class="glass-card">
+            <h2 class="text-2xl font-bold text-white mb-6">System Statistics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white/10 rounded-lg p-6">
+                    <div class="text-white/70 mb-2">Database Size</div>
+                    <div class="text-2xl font-bold text-white">
+                        <%= stats.totalUsers + stats.totalSearches + stats.totalLogs %> Records
+                    </div>
+                    <div class="text-white/60 text-sm mt-2">
+                        Users: <%= stats.totalUsers %><br>
+                        Searches: <%= stats.totalSearches %><br>
+                        Logs: <%= stats.totalLogs %>
+                    </div>
+                </div>
+
+                <div class="bg-white/10 rounded-lg p-6">
+                    <div class="text-white/70 mb-2">Cache Status</div>
+                    <div class="text-2xl font-bold text-white">Active</div>
+                    <div class="text-white/60 text-sm mt-2">
+                        TTL: 30 minutes<br>
+                        Auto-cleanup: Enabled
+                    </div>
+                </div>
+
+                <div class="bg-white/10 rounded-lg p-6">
+                    <div class="text-white/70 mb-2">Rate Limiting</div>
+                    <div class="text-2xl font-bold text-white">Enabled</div>
+                    <div class="text-white/60 text-sm mt-2">
+                        Window: 15 minutes<br>
+                        Max Requests: 100
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environment -->
+        <div class="glass-card">
+            <h2 class="text-2xl font-bold text-white mb-6">Environment</h2>
+            <div class="space-y-4">
+                <div class="bg-white/10 rounded-lg p-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <div class="text-white/70 mb-2">Node Version</div>
+                            <div class="text-white"><%= process.version %></div>
+                        </div>
+                        <div>
+                            <div class="text-white/70 mb-2">Environment</div>
+                            <div class="text-white"><%= process.env.NODE_ENV || 'development' %></div>
+                        </div>
+                        <div>
+                            <div class="text-white/70 mb-2">Server Port</div>
+                            <div class="text-white"><%= process.env.PORT || 3000 %></div>
+                        </div>
+                        <div>
+                            <div class="text-white/70 mb-2">Database</div>
+                            <div class="text-white">MongoDB</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance -->
+        <div class="glass-card">
+            <h2 class="text-2xl font-bold text-white mb-6">Maintenance</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white/10 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Cache Management</h3>
+                    <form action="/admin/settings/clear-cache" method="POST" class="space-y-4">
+                        <div class="text-white/70">Clear the weather data cache to force fresh API calls.</div>
+                        <button type="submit" class="glass-button">
+                            Clear Cache
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-white/10 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Log Management</h3>
+                    <form action="/admin/settings/clear-logs" method="POST" class="space-y-4">
+                        <div class="text-white/70">Clear system logs older than 30 days.</div>
+                        <button type="submit" class="glass-button">
+                            Clear Old Logs
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html> 
