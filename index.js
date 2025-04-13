@@ -13,6 +13,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const converterRoutes = require('./routes/converterRoutes');
 // const adminRoutes = require('./routes/adminRoutes');
 // const userRoutes = require('./routes/userRoutes');
 
@@ -127,6 +128,7 @@ console.log('Assets path:', path.join(__dirname, 'public/assets'));
 // Mount routes
 app.use('/', require('./routes/index'));
 app.use('/api/auth', authRoutes);
+app.use('/converter', converterRoutes)
 // app.use('/admin', adminRoutes);
 // app.use('/user', userRoutes);
 

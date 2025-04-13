@@ -3,6 +3,7 @@ const { checkAuth, guestsOnly, requireAuth, requireAdmin } = require('../middlew
 const { isAdmin, isUser } = require('../middleware/roles');
 const homeController = require('../controllers/homeController');
 const dashboardRoutes = require('./dashboardRoutes');
+const converterRoutes = require('./converterRoutes');
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.get('/register', guestsOnly, (req, res) => {
 
 // Mount dashboard routes
 router.use('/dashboard', dashboardRoutes);
+router.use('/converter', converterRoutes);
 
 // Other user routes
 router.get('/favorites', isUser, (req, res) => {
