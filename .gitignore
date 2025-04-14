@@ -45,3 +45,5 @@ build/
 # Cursor files
 .cursor
 
+# pnpm files
+pnpm-lock.yaml
