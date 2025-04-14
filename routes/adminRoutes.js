@@ -35,3 +35,6 @@ router.post('/settings/clear-cache', clearCache);
 router.post('/settings/clear-logs', clearOldLogs);
 
 module.exports = router;
+
+
+

@@ -247,11 +247,11 @@ const fetchWeatherData = async (coords, preferredUnit = 'celsius') => {
 // Controller functions
 const index = async (req, res) => {
     try {
-        res.render('pages/index', {
+    res.render('pages/index', { 
             title: 'Home',
             user: req.user,
-            weather: null
-        });
+        weather: null
+    });
     } catch (error) {
         console.error('Home page error:', error);
         res.render('pages/index', {
@@ -359,7 +359,7 @@ const getWeather = async (req, res) => {
         const errorMessage = error.response?.status === 429 
             ? 'Too many requests. Please try again later.'
             : 'Error fetching weather data. Please try again.';
-        
+
         return res.render('pages/index', {
             title: 'Home',
             user: req.user,
@@ -375,8 +375,8 @@ const apiGetWeather = async (req, res) => {
         const { city } = req.query;
         
         if (!city) {
-            return res.status(400).json({
-                success: false,
+            return res.status(400).json({ 
+                success: false, 
                 message: 'Please provide a city name'
             });
         }
@@ -456,7 +456,7 @@ const apiGetWeather = async (req, res) => {
                 message: 'Too many requests. Please try again later.'
             });
         }
-        
+
         res.status(500).json({
             success: false,
             message: 'Error fetching weather data'
