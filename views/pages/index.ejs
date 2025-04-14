@@ -8,6 +8,7 @@
   <meta http-equiv="Expires" content="0">
   <title><%= typeof title !== 'undefined' ? title : 'Breeze Weather' %></title>
   <link href="/css/output.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
   <script src="/assets/js/theme.js"></script>
 </head>
 <body class="min-h-screen gradient-main bg-[length:200%] animate-[gradient-animation_40s_ease_infinite] bg-fixed">
@@ -19,7 +20,7 @@
       <div class="flex-1">
         <% if (typeof weather !== 'undefined' && weather) { %>
           <input type="hidden" id="weather-code" value="<%= weather.current.weatherCode %>" />
-          
+
           <!-- Main Weather Display -->
           <div class="glass-card p-8 mb-6">
             <div class="flex flex-col">
@@ -36,7 +37,7 @@
                     <input type="hidden" name="name" value="<%= weather.current.location %>">
                     <input type="hidden" name="latitude" value="<%= weather.current.latitude %>">
                     <input type="hidden" name="longitude" value="<%= weather.current.longitude %>">
-                    <button type="submit" 
+                    <button type="submit"
                             class="glass-button flex items-center gap-2 px-4 py-2 transform hover:scale-105 transition-all duration-300 ease-in-out">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -46,20 +47,20 @@
                   </form>
                 <% } %>
               </div>
-              
+
               <!-- Current Weather -->
               <div class="flex mb-8">
                 <div class="mr-6">
-                  <% 
+                  <%
                   let weatherIcon = '☀️';
                   if (weather.current.weatherCode >= 1 && weather.current.weatherCode <= 3) {
                     weatherIcon = '🌤️';
                   } else if (weather.current.weatherCode >= 45 && weather.current.weatherCode <= 48) {
                     weatherIcon = '🌫️';
-                  } else if ((weather.current.weatherCode >= 51 && weather.current.weatherCode <= 67) || 
+                  } else if ((weather.current.weatherCode >= 51 && weather.current.weatherCode <= 67) ||
                             (weather.current.weatherCode >= 80 && weather.current.weatherCode <= 82)) {
                     weatherIcon = '🌧️';
-                  } else if ((weather.current.weatherCode >= 71 && weather.current.weatherCode <= 77) || 
+                  } else if ((weather.current.weatherCode >= 71 && weather.current.weatherCode <= 77) ||
                             (weather.current.weatherCode >= 85 && weather.current.weatherCode <= 86)) {
                     weatherIcon = '❄️';
                   } else if (weather.current.weatherCode >= 95 && weather.current.weatherCode <= 99) {
@@ -75,43 +76,35 @@
                   <div class="text-white/80 text-2xl mt-2"><%= weather.current.description %></div>
                 </div>
               </div>
-              
+
               <!-- Min/Max Temp -->
               <div class="flex items-center mb-6">
                 <div class="flex items-center mr-6">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 text-white/70" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
+                  <span class="material-symbols-outlined">arrow_downward</span>
                   <span class="text-white/70">
                     <%= weather.dailyForecast[0].minTemp %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
                   </span>
                 </div>
                 <div class="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 text-white/70" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                  </svg>
+                  <span class="material-symbols-outlined">arrow_upward</span>
                   <span class="text-white/70">
                     <%= weather.dailyForecast[0].maxTemp %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
                   </span>
                 </div>
               </div>
-              
+
               <!-- Weather Details -->
               <div class="grid grid-cols-2 gap-4">
                 <div class="bg-white/10 rounded-lg p-4">
-                  <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-white/70" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
-                    </svg>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined">air</span>
                     <span class="text-white/70">Wind</span>
                   </div>
                   <div class="text-white text-2xl mt-2"><%= weather.current.windSpeed %> km/h</div>
                 </div>
                 <div class="bg-white/10 rounded-lg p-4">
-                  <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-white/70" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M7 2a1 1 0 00-.707 1.707L7 4.414v3.758a1 1 0 01-.293.707l-4 4C.817 14.769 2.156 18 4.828 18h10.343c2.673 0 4.012-3.231 2.122-5.121l-4-4A1 1 0 0113 8.172V4.414l.707-.707A1 1 0 0013 2H7zm2 6.172V4h2v4.172a3 3 0 00.879 2.12l1.027 1.028a4 4 0 00-2.171.102l-.47.156a4 4 0 01-2.53 0l-.563-.187a1.993 1.993 0 00-.114-.035l1.063-1.063A3 3 0 009 8.172z" clip-rule="evenodd" />
-                    </svg>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined">humidity_mid</span>
                     <span class="text-white/70">Humidity</span>
                   </div>
                   <div class="text-white text-2xl mt-2"><%= weather.current.humidity %>%</div>
@@ -119,28 +112,28 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Hourly Forecast -->
           <div class="glass-card p-6">
             <h3 class="text-white/80 mb-4">Today's Forecast</h3>
             <div class="flex overflow-x-auto pb-4 -mx-4 px-4">
               <div class="flex gap-4">
-                <% weather.hourlyForecast.slice(0, 24).forEach((hour, index) => { 
+                <% weather.hourlyForecast.slice(0, 24).forEach((hour, index) => {
                   if (index % 3 === 0) { // Show every 3 hours to avoid clutter
                 %>
                   <div class="flex-shrink-0 w-[100px] bg-white/10 rounded-lg p-4 text-center">
                     <div class="text-white mb-2"><%= hour.time %></div>
                     <div class="text-3xl mb-1">
-                      <% 
+                      <%
                       let hourIcon = '☀️';
                       if (hour.weatherCode >= 1 && hour.weatherCode <= 3) {
                         hourIcon = '🌤️';
                       } else if (hour.weatherCode >= 45 && hour.weatherCode <= 48) {
                         hourIcon = '🌫️';
-                      } else if ((hour.weatherCode >= 51 && hour.weatherCode <= 67) || 
+                      } else if ((hour.weatherCode >= 51 && hour.weatherCode <= 67) ||
                                 (hour.weatherCode >= 80 && hour.weatherCode <= 82)) {
                         hourIcon = '🌧️';
-                      } else if ((hour.weatherCode >= 71 && hour.weatherCode <= 77) || 
+                      } else if ((hour.weatherCode >= 71 && hour.weatherCode <= 77) ||
                                 (hour.weatherCode >= 85 && hour.weatherCode <= 86)) {
                         hourIcon = '❄️';
                       } else if (hour.weatherCode >= 95 && hour.weatherCode <= 99) {
@@ -166,20 +159,18 @@
         <div>
                 <label for="city" class="block text-sm font-medium text-white/80 mb-2">Location</label>
                 <div class="relative">
-            <input type="text" 
-                   name="city" 
-                   id="city" 
-                         class="w-full px-4 py-3 rounded-lg bg-white/20 text-white placeholder-white/70 border-0 focus:ring-2 focus:ring-white/50"
+            <input type="text"
+                   name="city"
+                   id="city"
+                         class="w-full px-4 py-3 pl-[48px] rounded-lg bg-white/20 text-white placeholder-white/70 border-0 focus:ring-2 focus:ring-white/50"
                    placeholder="Enter city name or location"
                    required>
-                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white/70" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                    </svg>
+                   <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <span class="material-symbols-outlined">location_on</span>
                   </div>
           </div>
         </div>
-        <button type="submit" 
+        <button type="submit"
                       class="glass-button w-full flex justify-center py-3 px-4 text-sm font-medium">
           Get Weather Forecast
         </button>
@@ -198,22 +189,16 @@
           Sign up to unlock additional features:
         </p>
             <ul class="space-y-2 mb-6">
-              <li class="flex items-center text-white/80">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-white/60" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
+              <li class="flex items-center gap-2 text-white/80">
+                <span class="material-symbols-outlined">check</span>
                 Save favorite locations
               </li>
-              <li class="flex items-center text-white/80">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-white/60" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
+              <li class="flex items-center gap-2 text-white/80">
+                <span class="material-symbols-outlined">check</span>
                 View search history
               </li>
-              <li class="flex items-center text-white/80">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-white/60" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
+              <li class="flex items-center gap-2 text-white/80">
+                <span class="material-symbols-outlined">check</span>
                 Temperature converter
               </li>
         </ul>
@@ -231,42 +216,32 @@
           <div class="glass-card p-6 mb-6">
             <h2 class="text-xl font-semibold text-white mb-4">Quick Links</h2>
           <nav class="space-y-3">
-              <a href="/dashboard" class="flex items-center p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
+              <a href="/dashboard" class="flex items-center gap-2 p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                <span class="material-symbols-outlined">grid_view</span>
               <span>Weather Dashboard</span>
             </a>
-              <a href="/favorites" class="flex items-center p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
+              <a href="/favorites" class="flex items-center gap-2 p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                <span class="material-symbols-outlined">star</span>
               <span>Saved Locations</span>
             </a>
-              <a href="/history" class="flex items-center p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                </svg>
+              <a href="/history" class="flex items-center gap-2 p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                <span class="material-symbols-outlined">schedule</span>
               <span>Search History</span>
             </a>
-              <a href="/converter" class="flex items-center p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-                </svg>
+              <a href="/converter" class="flex items-center gap-2 p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                <span class="material-symbols-outlined">autorenew</span>
               <span>Temperature Converter</span>
             </a>
             <% if (locals.user.role === 'admin') { %>
-                <a href="/admin" class="flex items-center p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
-                  </svg>
+                <a href="/admin" class="flex items-center gap-2 p-3 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors">
+                  <span class="material-symbols-outlined">account_circle</span>
                 <span>Admin Dashboard</span>
               </a>
             <% } %>
           </nav>
         </div>
         <% } %>
-        
+
         <!-- Daily Forecast Info -->
         <!-- <% if (typeof weather !== 'undefined' && weather) { %>
           <div class="glass-card p-6">
@@ -276,16 +251,16 @@
                 <div class="flex items-center justify-between p-3 <%= index === 0 ? 'bg-white/10' : '' %> rounded-lg">
                   <div class="text-white"><%= day.date %></div>
                   <div class="flex items-center">
-                    <% 
+                    <%
                     let dayIcon = '☀️';
                     if (day.weatherCode >= 1 && day.weatherCode <= 3) {
                       dayIcon = '🌤️';
                     } else if (day.weatherCode >= 45 && day.weatherCode <= 48) {
                       dayIcon = '🌫️';
-                    } else if ((day.weatherCode >= 51 && day.weatherCode <= 67) || 
+                    } else if ((day.weatherCode >= 51 && day.weatherCode <= 67) ||
                               (day.weatherCode >= 80 && day.weatherCode <= 82)) {
                       dayIcon = '🌧️';
-                    } else if ((day.weatherCode >= 71 && day.weatherCode <= 77) || 
+                    } else if ((day.weatherCode >= 71 && day.weatherCode <= 77) ||
                               (day.weatherCode >= 85 && day.weatherCode <= 86)) {
                       dayIcon = '❄️';
                     } else if (day.weatherCode >= 95 && day.weatherCode <= 99) {
@@ -312,7 +287,7 @@
       if (cityInput) {
         cityInput.focus();
       }
-      
+
       // Hide scrollbar for horizontal lists
       document.querySelectorAll('.overflow-x-auto').forEach(container => {
         container.addEventListener('wheel', (e) => {
@@ -325,4 +300,4 @@
     });
   </script>
 </body>
-</html> 
+</html>
