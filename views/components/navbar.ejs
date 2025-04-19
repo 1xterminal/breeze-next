@@ -11,7 +11,8 @@
             <%
             // Base navigation items
             let navItems = [
-                { class: 'homePage', icon: 'home', text: 'Home Page', href: '/' }
+                { class: 'homePage', icon: 'home', text: 'Home Page', href: '/' },
+                { class: 'feedback', icon: 'chat', text: 'Submit Feedback', href: '/feedback/submit' }
             ];
 
             // Add items for logged-in users
@@ -25,6 +26,7 @@
                 // Add admin panel for admins
                 if (user.role === 'admin') {
                     navItems.push({ class: 'websiteSettings', icon: 'settings', text: 'Website Settings', href: '/admin' });
+                    navItems.push({ class: 'feedbackManagement', icon: 'feedback', text: 'Manage Feedback', href: '/admin/feedback' });
                 }
 
                 // Add user account with spacing
@@ -55,6 +57,7 @@
                                     invisible group-hover:visible group-hover:scale-100 group-hover:opacity-100 transition-all duration-400 z-10">
                             <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-blue-50 transition-colors duration-150">My Profile</a>
                             <a href="/profile/settings" class="block px-4 py-2 text-gray-700 hover:bg-blue-50 transition-colors duration-150">Settings</a>
+                            <a href="/feedback/history" class="block px-4 py-2 text-gray-700 hover:bg-blue-50 transition-colors duration-150">My Feedback</a>
                             <form action="/logout" method="POST" class="block">
                                 <button type="submit" class="w-full text-left px-4 py-2 text-red-600 hover:bg-blue-50 transition-colors duration-150">Logout</button>
                             </form>

@@ -47,3 +47,9 @@ build/
 
 # pnpm files
 pnpm-lock.yaml
+
+# Output of build processes
+output.css
+
+# text
+word.txt

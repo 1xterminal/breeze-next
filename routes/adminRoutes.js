@@ -12,6 +12,12 @@ const {
     clearOldLogs
 } = require('../controllers/adminController');
 
+const {
+    listFeedback,
+    updateFeedback,
+    deleteFeedback
+} = require('../controllers/feedbackController');
+
 const router = express.Router();
 
 // All routes require admin role
@@ -34,7 +40,16 @@ router.get('/settings', getSettings);
 router.post('/settings/clear-cache', clearCache);
 router.post('/settings/clear-logs', clearOldLogs);
 
+// Feedback management
+router.get('/feedback', listFeedback);
+router.post('/feedback/:id/update', updateFeedback);
+router.post('/feedback/:id/delete', deleteFeedback);
+
 module.exports = router;
+
+
+
+
 
 
 

@@ -8,6 +8,7 @@ const historyRoutes = require('./historyRoutes');
 const { getFavorites } = require('../controllers/favouriteController');
 const { getProfile, updateSettings, changePassword } = require('../controllers/profileController');
 const { getDashboard } = require('../controllers/adminController');
+const feedbackRoutes = require('./feedbackRoutes');
 
 const router = express.Router();
 
@@ -47,6 +48,17 @@ router.post('/profile/change-password', isUser, changePassword);
 
 // Admin routes
 router.get('/admin', isAdmin, getDashboard);
+
+// Feedback routes
+router.get('/feedback/submit', (req, res) => {
+  res.render('pages/feedback/submit', {
+    title: 'Submit Feedback',
+    user: req.user,
+    layout: 'layouts/main'
+  });
+});
+router.use('/feedback', feedbackRoutes);
+router.use('/admin/feedback', isAdmin, feedbackRoutes);
 
 // Logout route - handle both GET and POST
 router.post('/logout', (req, res) => {

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Feedback History - Breeze Weather</title>
+    <link href="/css/output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+</head>
+<body class="min-h-screen gradient-main bg-[length:200%] animate-[gradient-animation_40s_ease_infinite] bg-fixed">
+    <%- include('../../components/navbar') %>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Header -->
+        <div class="glass-card-sm p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-white">My Feedback History</h1>
+                <a href="/feedback/submit" class="glass-button">
+                    <span class="material-symbols-outlined align-middle mr-2">add</span>
+                    Submit New Feedback
+                </a>
+            </div>
+        </div>
+
+        <!-- Feedback List -->
+        <div class="glass-card">
+            <% if (feedback && feedback.length > 0) { %>
+                <div class="space-y-4">
+                    <% feedback.forEach(item => { %>
+                        <div class="bg-white/10 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-white/60 text-sm">
+                                            <%= new Date(item.createdAt).toLocaleString() %>
+                                        </span>
+                                    </div>
+                                    <div class="flex gap-2 mt-1">
+                                        <span class="bg-white/20 text-white text-xs px-2 py-1 rounded">
+                                            <%= item.feedbackType.replace('_', ' ') %>
+                                        </span>
+                                        <span class="bg-white/20 text-white text-xs px-2 py-1 rounded">
+                                            <%= item.status %>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-white mb-3"><%= item.message %></div>
+
+                            <% if (item.locationContext && item.locationContext.name) { %>
+                                <div class="bg-white/10 p-3 rounded mb-3">
+                                    <div class="text-white/70 text-sm mb-1">Location Context:</div>
+                                    <div class="text-white">
+                                        <%= item.locationContext.name %>
+                                        (<%= item.locationContext.latitude.toFixed(4) %>, <%= item.locationContext.longitude.toFixed(4) %>)
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <% if (item.adminNotes) { %>
+                                <div class="bg-white/10 p-3 rounded">
+                                    <div class="text-white/70 text-sm mb-1">Admin Response:</div>
+                                    <div class="text-white"><%= item.adminNotes %></div>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="text-center py-8">
+                    <div class="text-white/70 mb-4">You haven't submitted any feedback yet</div>
+                    <a href="/feedback/submit" class="glass-button">
+                        Submit Your First Feedback
+                    </a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html> 

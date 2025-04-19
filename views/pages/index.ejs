@@ -70,8 +70,8 @@
                   <div class="text-8xl mb-2"><%= weatherIcon %></div>
                 </div>
                 <div>
-                  <div class="text-white text-7xl font-light">
-                    <%= weather.current.temperature %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                  <div class="text-4xl font-bold text-white">
+                    <%= formatTemperature(weather.current.temperature, locals.user?.settings?.temperatureUnit || 'celsius') %>
                   </div>
                   <div class="text-white/80 text-2xl mt-2"><%= weather.current.description %></div>
                 </div>
@@ -82,13 +82,13 @@
                 <div class="flex items-center mr-6">
                   <span class="material-symbols-outlined">arrow_downward</span>
                   <span class="text-white/70">
-                    <%= weather.dailyForecast[0].minTemp %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                    <%= formatTemperature(weather.dailyForecast[0].minTemp, locals.user?.settings?.temperatureUnit || 'celsius') %>
                   </span>
                 </div>
                 <div class="flex items-center">
                   <span class="material-symbols-outlined">arrow_upward</span>
                   <span class="text-white/70">
-                    <%= weather.dailyForecast[0].maxTemp %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                    <%= formatTemperature(weather.dailyForecast[0].maxTemp, locals.user?.settings?.temperatureUnit || 'celsius') %>
                   </span>
                 </div>
               </div>
@@ -143,7 +143,7 @@
                       <%= hourIcon %>
                     </div>
                     <div class="text-white text-lg font-medium">
-                      <%= hour.temperature %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                      <%= formatTemperature(hour.temperature, locals.user?.settings?.temperatureUnit || 'celsius') %>
                     </div>
                     <div class="text-white/70 text-xs mt-1"><%= hour.precipitationProbability %>% rain</div>
                   </div>
@@ -159,9 +159,9 @@
         <div>
                 <label for="city" class="block text-sm font-medium text-white/80 mb-2">Location</label>
                 <div class="relative">
-            <input type="text"
-                   name="city"
-                   id="city"
+            <input type="text" 
+                   name="city" 
+                   id="city" 
                          class="w-full px-4 py-3 pl-[48px] rounded-lg bg-white/20 text-white placeholder-white/70 border-0 focus:ring-2 focus:ring-white/50"
                    placeholder="Enter city name or location"
                    required>
@@ -170,7 +170,7 @@
                   </div>
           </div>
         </div>
-        <button type="submit"
+        <button type="submit" 
                       class="glass-button w-full flex justify-center py-3 px-4 text-sm font-medium">
           Get Weather Forecast
         </button>
@@ -300,4 +300,4 @@
     });
   </script>
 </body>
-</html>
+</html> 

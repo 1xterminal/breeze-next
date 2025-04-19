@@ -261,6 +261,6 @@ const loginAdmin = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
-  loginAdmin, // Export the new admin login controller
+  loginAdmin,
   registerUserForm
 };

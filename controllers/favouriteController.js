@@ -9,18 +9,16 @@ const addFavorite = async (req, res) => {
     try {
         console.log('Add Favorite - Request Body:', req.body);
         
-        const { name } = req.body;
-        const latitude = parseFloat(req.body.latitude);
-        const longitude = parseFloat(req.body.longitude);
+        const { name, latitude, longitude, customName } = req.body;
 
         // Enhanced validation
-        if (!name || !req.body.latitude || !req.body.longitude || isNaN(latitude) || isNaN(longitude)) {
+        if (!name || !latitude || !longitude || isNaN(parseFloat(latitude)) || isNaN(parseFloat(longitude))) {
             console.log('Validation Failed:', {
                 hasName: !!name,
-                hasLatitude: !!req.body.latitude,
-                hasLongitude: !!req.body.longitude,
-                parsedLatitude: latitude,
-                parsedLongitude: longitude
+                hasLatitude: !!latitude,
+                hasLongitude: !!longitude,
+                parsedLatitude: parseFloat(latitude),
+                parsedLongitude: parseFloat(longitude)
             });
             req.flash('error', 'Invalid location data. Please try again.');
             return res.redirect('/dashboard');
@@ -31,8 +29,8 @@ const addFavorite = async (req, res) => {
         
         // Check if location already exists in favorites
         const exists = user.favorites.some(fav => 
-            Math.abs(fav.latitude - latitude) < 0.0001 && 
-            Math.abs(fav.longitude - longitude) < 0.0001
+            Math.abs(fav.latitude - parseFloat(latitude)) < 0.0001 && 
+            Math.abs(fav.longitude - parseFloat(longitude)) < 0.0001
         );
 
         if (exists) {
@@ -41,11 +39,15 @@ const addFavorite = async (req, res) => {
             return res.redirect('/dashboard');
         }
 
-        // Add to favorites
+        // Add to favorites with enhanced data
         const newFavorite = {
+            customName: customName || name, // Use provided custom name or fallback to location name
             name,
-            latitude,
-            longitude,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            notes: '',
+            category: 'OTHER',
+            tags: [],
             createdAt: new Date()
         };
         console.log('Adding New Favorite:', newFavorite);
@@ -90,14 +92,70 @@ const removeFavorite = async (req, res) => {
 };
 
 /**
- * Get user's favorite locations with current weather
+ * Update a favorite location
+ * @route POST /favorites/:id/update
+ * @access Private
+ */
+const updateFavorite = async (req, res) => {
+    try {
+        const { favoriteId } = req.params;
+        const { customName, notes, category, tags } = req.body;
+
+        const user = await User.findById(req.user.id);
+        const favorite = user.favorites.id(favoriteId);
+
+        if (!favorite) {
+            if (req.xhr) {
+                return res.status(404).json({ message: 'Favorite location not found' });
+            }
+            req.flash('error', 'Favorite location not found');
+            return res.redirect('/favorites');
+        }
+
+        // Update fields
+        favorite.customName = customName || favorite.customName;
+        favorite.notes = notes || favorite.notes;
+        favorite.category = category || favorite.category;
+        favorite.tags = tags ? (Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim())) : favorite.tags;
+
+        await user.save();
+
+        if (req.xhr) {
+            return res.json({ 
+                message: 'Favorite location updated',
+                favorite: favorite
+            });
+        }
+
+        req.flash('success', 'Favorite location updated');
+        res.redirect('/favorites');
+
+    } catch (error) {
+        console.error('Update favorite error:', error);
+        if (req.xhr) {
+            return res.status(500).json({ message: 'Error updating favorite location' });
+        }
+        req.flash('error', 'Error updating favorite location');
+        res.redirect('/favorites');
+    }
+};
+
+/**
+ * Get user's favorite locations with sorting and filtering
  * @route GET /favorites
  * @access Private
  */
 const getFavorites = async (req, res) => {
     try {
-        // Fetch user with favorites populated
-        const user = await User.findById(req.user.id).select('favorites');
+        // Get query parameters
+        const sortBy = req.query.sortBy || 'customName';
+        const sortOrder = req.query.sortOrder || 'asc';
+        const category = req.query.category;
+        const search = req.query.search;
+        const tag = req.query.tag;
+
+        // Fetch user with favorites
+        const user = await User.findById(req.user.id).select('favorites settings');
         
         if (!user) {
             return res.render('pages/dashboard/favorites', {
@@ -105,17 +163,75 @@ const getFavorites = async (req, res) => {
                 user: req.user,
                 favorites: [],
                 error: 'User not found',
+                sortBy,
+                sortOrder,
+                category,
+                search,
+                tag,
                 layout: 'layouts/main'
             });
         }
 
-        console.log('User favorites:', user.favorites); // Add this for debugging
+        // Filter and sort favorites
+        let favorites = [...user.favorites];
+
+        // Apply category filter
+        if (category && category !== 'ALL') {
+            favorites = favorites.filter(fav => fav.category === category);
+        }
+
+        // Apply search filter
+        if (search) {
+            const searchLower = search.toLowerCase();
+            favorites = favorites.filter(fav => 
+                fav.customName.toLowerCase().includes(searchLower) ||
+                fav.name.toLowerCase().includes(searchLower) ||
+                fav.notes.toLowerCase().includes(searchLower)
+            );
+        }
+
+        // Apply tag filter
+        if (tag) {
+            favorites = favorites.filter(fav => fav.tags.includes(tag));
+        }
+
+        // Sort favorites
+        favorites.sort((a, b) => {
+            let comparison = 0;
+            switch (sortBy) {
+                case 'customName':
+                    comparison = a.customName.localeCompare(b.customName);
+                    break;
+                case 'name':
+                    comparison = a.name.localeCompare(b.name);
+                    break;
+                case 'category':
+                    comparison = a.category.localeCompare(b.category);
+                    break;
+                case 'date':
+                    comparison = new Date(a.createdAt) - new Date(b.createdAt);
+                    break;
+                default:
+                    comparison = a.customName.localeCompare(b.customName);
+            }
+            return sortOrder === 'desc' ? -comparison : comparison;
+        });
+
+        // Get unique tags for filter dropdown
+        const allTags = [...new Set(user.favorites.flatMap(fav => fav.tags))];
         
         return res.render('pages/dashboard/favorites', {
             title: 'Favorite Locations',
             user: req.user,
-            favorites: user.favorites || [],
+            favorites,
             error: null,
+            sortBy,
+            sortOrder,
+            category,
+            search,
+            tag,
+            allTags,
+            categories: ['HOME', 'WORK', 'VACATION', 'FREQUENT', 'POI', 'OTHER'],
             layout: 'layouts/main'
         });
 
@@ -126,6 +242,8 @@ const getFavorites = async (req, res) => {
             user: req.user,
             favorites: [],
             error: 'Error loading favorite locations',
+            sortBy: 'customName',
+            sortOrder: 'asc',
             layout: 'layouts/main'
         });
     }
@@ -134,8 +252,13 @@ const getFavorites = async (req, res) => {
 module.exports = {
     addFavorite,
     removeFavorite,
+    updateFavorite,
     getFavorites
 };
+
+
+
+
 
 
 

@@ -1,16 +1,27 @@
 const express = require('express');
 const { isUser } = require('../middleware/roles');
-const favouriteController = require('../controllers/favouriteController');
+const {
+    addFavorite,
+    removeFavorite,
+    updateFavorite,
+    getFavorites
+} = require('../controllers/favouriteController');
 
 const router = express.Router();
 
+// All routes require user authentication
+router.use(isUser);
+
 // Get favorites page
-router.get('/', isUser, favouriteController.getFavorites);
+router.get('/', getFavorites);
 
-// Add to favorites
-router.post('/add', isUser, favouriteController.addFavorite);
+// Add favorite
+router.post('/add', addFavorite);
 
-// Remove from favorites
-router.post('/remove', isUser, favouriteController.removeFavorite);
+// Remove favorite
+router.post('/remove', removeFavorite);
+
+// Update favorite
+router.post('/:favoriteId/update', updateFavorite);
 
 module.exports = router; 

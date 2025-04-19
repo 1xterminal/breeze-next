@@ -7,6 +7,8 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const flash = require('connect-flash');
 const { checkAuth } = require('../middleware/auth');
+const { convertTemperature, formatTemperature, getUnitSymbol } = require('../utils/temperatureConverter');
+const temperatureMiddleware = require('../middleware/temperatureMiddleware');
 
 const configureExpress = (app) => {
     // Security Middleware
@@ -52,6 +54,9 @@ const configureExpress = (app) => {
     // Authentication middleware
     app.use(checkAuth);
 
+    // Add temperature middleware
+    app.use(temperatureMiddleware);
+
     // Local variables middleware
     app.use((req, res, next) => {
         res.locals.user = req.session.user || null;
@@ -60,6 +65,11 @@ const configureExpress = (app) => {
             error: req.flash('error'),
             info: req.flash('info')
         };
+        // Add temperature conversion utilities to locals
+        res.locals.convertTemperature = convertTemperature;
+        res.locals.formatTemperature = formatTemperature;
+        res.locals.getUnitSymbol = getUnitSymbol;
+        
         // Set cache control headers
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.setHeader('Pragma', 'no-cache');

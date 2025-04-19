@@ -221,6 +221,7 @@ const processWeatherData = (data, locationName, lat, lon, preferredUnit = 'celsi
     precipitation: data.current.precipitation,
     weatherCode: data.current.weather_code,
     description: weatherCodes[data.current.weather_code] || 'Unknown',
+    originalUnit: 'celsius', // OpenMeteo always returns Celsius
     units: {
       temperature: getUnitSymbol(preferredUnit),
       windSpeed: data.current_units.wind_speed_10m,
@@ -243,7 +244,8 @@ const processWeatherData = (data, locationName, lat, lon, preferredUnit = 'celsi
         temperature: convertTemperature(data.hourly.temperature_2m[index], 'celsius', preferredUnit),
         precipitationProbability: data.hourly.precipitation_probability[index],
         weatherCode: data.hourly.weather_code[index],
-        description: weatherCodes[data.hourly.weather_code[index]] || 'Unknown'
+        description: weatherCodes[data.hourly.weather_code[index]] || 'Unknown',
+        originalUnit: 'celsius'
       });
     }
   }
@@ -258,7 +260,8 @@ const processWeatherData = (data, locationName, lat, lon, preferredUnit = 'celsi
       precipitationSum: data.daily.precipitation_sum[index],
       precipitationProbability: data.daily.precipitation_probability_max[index],
       weatherCode: data.daily.weather_code[index],
-      description: weatherCodes[data.daily.weather_code[index]] || 'Unknown'
+      description: weatherCodes[data.daily.weather_code[index]] || 'Unknown',
+      originalUnit: 'celsius'
     };
   });
 

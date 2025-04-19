@@ -7,6 +7,9 @@ const router = express.Router();
 // Get history page
 router.get('/', isUser, historyController.getHistory);
 
+// View historical weather data
+router.get('/:id', isUser, historyController.viewHistoricalWeather);
+
 // Clear all history
 router.post('/clear', isUser, historyController.clearHistory);
 

@@ -43,9 +43,17 @@ const UserSchema = new mongoose.Schema({
     }
   },
   favorites: [{
-    name: String,
-    latitude: Number,
-    longitude: Number,
+    customName: { type: String, required: true },
+    name: { type: String, required: true },
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    notes: { type: String, default: '' },
+    category: {
+      type: String,
+      enum: ['HOME', 'WORK', 'VACATION', 'FREQUENT', 'POI', 'OTHER'],
+      default: 'OTHER'
+    },
+    tags: [{ type: String }],
     createdAt: { type: Date, default: Date.now }
   }],
   searchHistory: [{
@@ -94,6 +102,33 @@ UserSchema.methods.generateAuthToken = async function() {
     console.error('Error generating JWT:', error);
     throw new Error('Could not generate auth token');
   }
+};
+
+// Method to get sorted favorites
+UserSchema.methods.getSortedFavorites = function(sortBy = 'name', sortOrder = 'asc') {
+    let favorites = [...this.favorites];
+    
+    switch (sortBy) {
+        case 'name':
+            favorites.sort((a, b) => {
+                return sortOrder === 'asc' 
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name);
+            });
+            break;
+        case 'date':
+            favorites.sort((a, b) => {
+                return sortOrder === 'asc'
+                    ? new Date(a.createdAt) - new Date(b.createdAt)
+                    : new Date(b.createdAt) - new Date(a.createdAt);
+            });
+            break;
+        default:
+            // Default to sorting by name ascending
+            favorites.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    return favorites;
 };
 
 module.exports = mongoose.model('User', UserSchema);

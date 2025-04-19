@@ -58,37 +58,89 @@
             </div>
 
             <!-- User Management -->
-            <div class="glass-card">
+            <div class="glass-card mb-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-white">User Management</h2>
-                    <button type="button" class="glass-button" data-modal-target="createUserModal">
-                        Add User
-                    </button>
+                    <div class="flex gap-3">
+                        <button id="showUserFilters" class="glass-button">
+                            <span class="material-symbols-outlined align-middle mr-2">filter_list</span>
+                            Filters
+                        </button>
+                        <button type="button" class="glass-button" id="createUserBtn">
+                            <span class="material-symbols-outlined align-middle mr-2">person_add</span>
+                            Add User
+                        </button>
+                    </div>
                 </div>
 
+                <!-- User Filters Panel -->
+                <div id="userFiltersPanel" class="bg-white/10 rounded-lg p-6 mb-6" style="display: none;">
+                    <form id="userFilterForm" action="/admin" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Search</label>
+                            <input type="text" name="search" value="<%= filters?.search || '' %>" 
+                                   placeholder="Username or email" 
+                                   class="w-full px-3 py-2 bg-white/20 rounded-lg text-white placeholder-white/50">
+                        </div>
+
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Role</label>
+                            <select name="role" class="w-full px-3 py-2 bg-white/20 rounded-lg">
+                                <option value="" class="text-black">All Roles</option>
+                                <option class="text-black"value="user" <%= filters?.role === 'user' ? 'selected' : '' %>>User</option>
+                                <option class="text-black"value="admin" <%= filters?.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Sort By</label>
+                            <div class="flex gap-2">
+                                <select name="sortBy" class="w-full px-3 py-2 bg-white/20 rounded-lg">
+                                    <option class="text-black" value="created" <%= filters?.sortBy === 'created' ? 'selected' : '' %>>Join Date</option>
+                                    <option class="text-black" value="username" <%= filters?.sortBy    === 'username' ? 'selected' : '' %>>Username</option>
+                                    <option class="text-black" value="email" <%= filters?.sortBy === 'email' ? 'selected' : '' %>>Email</option>
+                                    <option class="text-black" value="lastLogin" <%= filters?.sortBy === 'lastLogin' ? 'selected' : '' %>>Last Login</option>
+                                </select>
+                                <select name="sortOrder" class="w-1/3 px-3 py-2 bg-white/20 rounded-lg">
+                                    <option value="desc" <%= filters?.sortOrder === 'desc' ? 'selected' : '' %>>↓</option>
+                                    <option value="asc" <%= filters?.sortOrder === 'asc' ? 'selected' : '' %>>↑</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end gap-2">
+                            <button type="submit" class="glass-button">Apply Filters</button>
+                            <button type="button" id="resetUserFilters" class="glass-button bg-red-400/30 hover:bg-red-500/40">Reset</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- User Table -->
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
-                            <tr class="text-white/70 text-left">
-                                <th class="p-4">Username</th>
-                                <th class="p-4">Email</th>
-                                <th class="p-4">Role</th>
-                                <th class="p-4">Joined</th>
-                                <th class="p-4">Actions</th>
+                            <tr class="text-white/70 border-b border-white/10">
+                                <th class="px-4 py-3 text-left">Username</th>
+                                <th class="px-4 py-3 text-left">Email</th>
+                                <th class="px-4 py-3 text-left">Role</th>
+                                <th class="px-4 py-3 text-left">Joined</th>
+                                <th class="px-4 py-3 text-left">Last Login</th>
+                                <th class="px-4 py-3 text-left">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% users.forEach(user => { %>
-                                <tr class="border-t border-white/10">
-                                    <td class="p-4 text-white"><%= user.username %></td>
-                                    <td class="p-4 text-white"><%= user.email %></td>
-                                    <td class="p-4">
-                                        <span class="px-2 py-1 rounded-full bg-white/20 text-white text-sm">
-                                            <%= user.role %>
-                                        </span>
+                                <tr class="border-b border-white/10 hover:bg-white/5">
+                                    <td class="px-4 py-3 text-white"><%= user.username %></td>
+                                    <td class="px-4 py-3 text-white"><%= user.email %></td>
+                                    <td class="px-4 py-3 text-white capitalize"><%= user.role %></td>
+                                    <td class="px-4 py-3 text-white">
+                                        <%= new Date(user.createdAt).toLocaleDateString() %>
                                     </td>
-                                    <td class="p-4 text-white"><%= new Date(user.createdAt).toLocaleDateString() %></td>
-                                    <td class="p-4">
+                                    <td class="px-4 py-3 text-white">
+                                        <%= new Date(user.lastLoginAt).toLocaleDateString() %>
+                                    </td>
+                                    <td class="px-4 py-3 text-white">
                                         <div class="flex gap-2">
                                             <button type="button"
                                                     class="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors text-white"
@@ -115,6 +167,24 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                <% if (pagination && pagination.total > 1) { %>
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-white/70">
+                            Showing <%= (pagination.current - 1) * pagination.limit + 1 %> to 
+                            <%= Math.min(pagination.current * pagination.limit, pagination.totalItems) %> of <%= pagination.totalItems %> users
+                        </div>
+                        <div class="flex gap-2">
+                            <% if (pagination.current > 1) { %>
+                                <a href="?page=<%= pagination.current - 1 %><%= queryString %>" class="glass-button">Previous</a>
+                            <% } %>
+                            <% if (pagination.current < pagination.total) { %>
+                                <a href="?page=<%= pagination.current + 1 %><%= queryString %>" class="glass-button">Next</a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
             </div>
 
             <!-- Recent Activity -->
@@ -158,43 +228,40 @@
     </div>
 
      <!-- Create User Modal -->
-     <div id="createUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-[10px] hidden z-50 overflow-y-auto">
+     <div id="createUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="glass-card w-full max-w-md m-auto relative" onclick="event.stopPropagation();">
+            <div class="glass-card w-full max-w-md" onclick="event.stopPropagation();">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-white">Create New User</h3>
-                    <button type="button" class="modal-close text-white/70 hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                    <button type="button" class="modal-close text-white/70 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">close</span>
                     </button>
                 </div>
                 <form action="/admin/users" method="POST" class="space-y-4">
                     <div>
-                        <label class="block text-white/70 mb-2">Username</label>
+                        <label class="block text-white/70 text-sm mb-2">Username</label>
                         <input type="text" name="username" required minlength="3"
                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
                     </div>
                     <div>
-                        <label class="block text-white/70 mb-2">Email</label>
+                        <label class="block text-white/70 text-sm mb-2">Email</label>
                         <input type="email" name="email" required
                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
                     </div>
                     <div>
-                        <label class="block text-white/70 mb-2">Password</label>
+                        <label class="block text-white/70 text-sm mb-2">Password</label>
                         <input type="password" name="password" required minlength="6"
                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
                     </div>
                     <div>
-                        <label class="block text-white/70 mb-2">Role</label>
-                        <select name="role" required
-                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white border-0 focus:ring-2 focus:ring-white/50">
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
+                        <label class="block text-white/70 text-sm mb-2">Role</label>
+                        <select name="role" required class="w-full px-4 py-2 rounded-lg bg-white/20 text-white border-0 focus:ring-2 focus:ring-white/50">
+                            <option value="user" class="text-black">User</option>
+                            <option value="admin" class="text-black">Admin</option>
                         </select>
                     </div>
                     <div class="flex justify-end gap-4 pt-4">
-                        <button type="button" class="modal-close px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors">
+                        <button type="button" class="modal-close glass-button bg-white/20 hover:bg-white/30 transition-colors">
                             Cancel
                         </button>
                         <button type="submit" class="glass-button">
@@ -207,43 +274,40 @@
     </div>
 
     <!-- Edit User Modal -->
-    <div id="editUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-[10px] hidden z-50 overflow-y-auto">
+    <div id="editUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="glass-card w-full max-w-md m-auto relative" onclick="event.stopPropagation();">
+            <div class="glass-card w-full max-w-md" onclick="event.stopPropagation();">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-white">Edit User</h3>
-                    <button type="button" class="modal-close text-white/70 hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                    <button type="button" class="modal-close text-white/70 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">close</span>
                     </button>
                 </div>
                 <form id="editUserForm" method="POST" class="space-y-4">
                     <div>
-                        <label class="block text-white/70 mb-2">Username</label>
+                        <label class="block text-white/70 text-sm mb-2">Username</label>
                         <input type="text" name="username" id="editUsername" required minlength="3"
                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
                     </div>
                     <div>
-                        <label class="block text-white/70 mb-2">Email</label>
+                        <label class="block text-white/70 text-sm mb-2">Email</label>
                         <input type="email" name="email" id="editEmail" required
                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
                     </div>
                     <div>
-                        <label class="block text-white/70 mb-2">New Password (leave blank to keep current)</label>
+                        <label class="block text-white/70 text-sm mb-2">New Password (leave blank to keep current)</label>
                         <input type="password" name="password" id="editPassword"
                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:ring-2 focus:ring-white/50">
                     </div>
                     <div>
-                        <label class="block text-white/70 mb-2">Role</label>
-                        <select name="role" id="editRole" required
-                                class="w-full px-4 py-2 rounded-lg bg-white/20 text-white border-0 focus:ring-2 focus:ring-white/50">
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
+                        <label class="block text-white/70 text-sm mb-2">Role</label>
+                        <select name="role" id="editRole" required class="w-full px-4 py-2 rounded-lg bg-white/20 text-white border-0 focus:ring-2 focus:ring-white/50">
+                            <option value="user" class="text-black">User</option>
+                            <option value="admin" class="text-black">Admin</option>
                         </select>
                     </div>
                     <div class="flex justify-end gap-4 pt-4">
-                        <button type="button" class="modal-close px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors">
+                        <button type="button" class="modal-close glass-button bg-white/20 hover:bg-white/30 transition-colors">
                             Cancel
                         </button>
                         <button type="submit" class="glass-button">
@@ -256,15 +320,13 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteConfirmModal" class="fixed inset-0 bg-black/50 backdrop-blur-[10px] hidden z-50 overflow-y-auto">
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="glass-card w-full max-w-md m-auto relative" onclick="event.stopPropagation();">
+            <div class="glass-card w-full max-w-md" onclick="event.stopPropagation();">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold text-white">Confirm Delete</h3>
-                    <button type="button" class="modal-close text-white/70 hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                    <button type="button" class="modal-close text-white/70 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">close</span>
                     </button>
                 </div>
                 <div class="mb-6 text-white">
@@ -272,10 +334,10 @@
                     This action cannot be undone.
                 </div>
                 <form id="deleteUserForm" method="POST" class="flex justify-end gap-4">
-                    <button type="button" class="modal-close px-4 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors">
+                    <button type="button" class="modal-close glass-button bg-white/20 hover:bg-white/30 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-red-400/30 text-white hover:bg-red-500/40 transition-colors">
+                    <button type="submit" class="glass-button bg-red-400/30 hover:bg-red-500/40 transition-colors">
                         Delete User
                     </button>
                 </form>
@@ -290,8 +352,7 @@
                 const $modal = $(`#${modalId}`);
                 $modal.removeClass('hidden');
                 $('body').css({
-                    'overflow': 'hidden',
-                    'padding-right': '15px'
+                    'overflow': 'hidden'
                 });
             }
 
@@ -299,13 +360,12 @@
             function hideModal($modal) {
                 $modal.addClass('hidden');
                 $('body').css({
-                    'overflow': '',
-                    'padding-right': ''
+                    'overflow': ''
                 });
             }
 
             // Create User Modal
-            $('[data-modal-target="createUserModal"]').on('click', function() {
+            $('#createUserBtn').on('click', function() {
                 showModal('createUserModal');
             });
 
@@ -338,38 +398,57 @@
 
             // Close button click handler
             $('.modal-close').on('click', function() {
-                const $modal = $(this).closest('div[id$="Modal"]');
-                hideModal($modal);
-            });
-
-
-            // Cancel button click handler
-            $('.modal button:contains("Cancel")').on('click', function() {
-                const $modal = $(this).closest('.modal');
+                const $modal = $(this).closest('[id$="Modal"]');
                 hideModal($modal);
             });
 
             // Click outside modal to close
-            $('.modal').on('click', function(event) {
+            $('#createUserModal, #editUserModal, #deleteConfirmModal').on('click', function(event) {
                 // Check if the click was directly on the modal backdrop
                 if (event.target === this) {
                     hideModal($(this));
                 }
             });
 
-            // Prevent clicks inside modal from closing it
-            $('.modal .glass-card').on('click', function(event) {
-                event.stopPropagation();
-            });
-
-            // Close on escape key
+            // Keyboard escape key to close modals
             $(document).on('keydown', function(event) {
                 if (event.key === 'Escape') {
-                    $('.modal:not(.hidden)').each(function() {
+                    $('.fixed.inset-0:not(.hidden)').each(function() {
                         hideModal($(this));
                     });
                 }
             });
+
+            // User filters panel toggle
+            const userFiltersBtn = document.getElementById('showUserFilters');
+            const userFiltersPanel = document.getElementById('userFiltersPanel');
+            if (userFiltersBtn && userFiltersPanel) {
+                userFiltersBtn.addEventListener('click', function() {
+                    if (userFiltersPanel.style.display === 'none' || !userFiltersPanel.style.display) {
+                        userFiltersPanel.style.display = 'block';
+                    } else {
+                        userFiltersPanel.style.display = 'none';
+                    }
+                });
+            }
+
+            // User filters reset button
+            const resetUserFiltersBtn = document.getElementById('resetUserFilters');
+            const userFilterForm = document.getElementById('userFilterForm');
+            if (resetUserFiltersBtn && userFilterForm) {
+                resetUserFiltersBtn.addEventListener('click', function() {
+                    // Clear all inputs
+                    userFilterForm.querySelectorAll('input').forEach(input => {
+                        input.value = '';
+                    });
+                    // Reset selects to first option
+                    userFilterForm.querySelectorAll('select').forEach(select => {
+                        select.selectedIndex = 0;
+                    });
+                    // Submit the form
+                    userFilterForm.submit();
+                });
+            }
 
             // Auto-hide flash messages
             setTimeout(function() {

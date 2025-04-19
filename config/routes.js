@@ -6,6 +6,7 @@ const converterRoutes = require('../routes/converterRoutes');
 const historyRoutes = require('../routes/historyRoutes');
 const favouriteRoutes = require('../routes/favouriteRoutes');
 const adminRoutes = require('../routes/adminRoutes');
+const feedbackRoutes = require('../routes/feedbackRoutes');
 
 const configureRoutes = (app) => {
     // Rate limiting for API routes
@@ -23,6 +24,7 @@ const configureRoutes = (app) => {
     app.use('/history', historyRoutes);
     app.use('/favorites', favouriteRoutes);
     app.use('/admin', adminRoutes);
+    app.use('/feedback', feedbackRoutes);
 
     // 404 handler
     app.use((req, res, next) => {

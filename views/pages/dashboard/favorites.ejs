@@ -8,80 +8,360 @@
   <meta http-equiv="Expires" content="0">
   <title><%= typeof title !== 'undefined' ? title : 'Breeze Weather Favorites' %></title>
   <link href="/css/output.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
 </head>
 <body class="min-h-screen gradient-main bg-[length:200%] animate-[gradient-animation_40s_ease_infinite] bg-fixed">
     <%- include('../../components/navbar') %>
 
-<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-  <div class="glass-card p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-white">Favorite Locations</h1>
-      <a href="/dashboard" class="glass-button">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-        </svg>
-        Back to Dashboard
-      </a>
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Header & Filters -->
+        <div class="glass-card-sm p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-white">Favorite Locations</h1>
+                <button id="showFilters" class="glass-button">
+                    <span class="material-symbols-outlined align-middle mr-2">filter_list</span>
+                    Filters
+                </button>
+            </div>
+
+            <!-- Filters Panel -->
+            <div id="filtersPanel" class="mt-4" style="display: none;">
+                <form action="/favorites" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-white/80 text-sm mb-2">Search</label>
+                        <input type="text" name="search" value="<%= search || '' %>"
+                               placeholder="Search locations..."
+                               class="w-full px-3 py-2 bg-white/20 rounded-lg text-white placeholder-white/50">
+                    </div>
+
+                    <div>
+                        <label class="block text-white/80 text-sm mb-2">Category</label>
+                        <select name="category" class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
+                            <option value="ALL">All Categories</option>
+                            <% categories.forEach(cat => { %>
+                                <option class="text-black" value="<%= cat %>" <%= category === cat ? 'selected' : '' %>><%= cat %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <% if (allTags && allTags.length > 0) { %>
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Filter by Tag</label>
+                            <select name="tag" class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
+                                <option value="">All Tags</option>
+                                <% allTags.forEach(t => { %>
+                                    <option value="<%= t %>" <%= tag === t ? 'selected' : '' %>><%= t %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    <% } %>
+
+                    <div class="flex items-end gap-2">
+                        <button type="submit" class="glass-button">Apply Filters</button>
+                        <a href="/favorites" class="glass-button bg-red-400/30 hover:bg-red-500/40">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <% if (error) { %>
+            <div class="glass-card-sm bg-red-400/30 text-white p-4 rounded-lg mb-6">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <!-- Favorites Grid -->
+        <div class="glass-card p-6">
+            <div class="mb-4 flex items-center justify-between">
+                <div class="text-white/80">
+                    <%= favorites.length %> location<%= favorites.length !== 1 ? 's' : '' %>
+                </div>
+                <div class="flex gap-2">
+                    <select name="sortBy" class="px-3 py-2 bg-white/20 rounded-lg text-white text-sm"
+                            onchange="window.location.href = updateQueryParam('sortBy', this.value)">
+                        <option class="text-black" value="customName" <%= sortBy === 'customName' ? 'selected' : '' %>>Sort by Custom Name</option>
+                        <option class="text-black" value="name" <%= sortBy === 'name' ? 'selected' : '' %>>Sort by Location Name</option>
+                        <option class="text-black" value="category" <%= sortBy === 'category' ? 'selected' : '' %>>Sort by Category</option>
+                        <option class="text-black" value="date" <%= sortBy === 'date' ? 'selected' : '' %>>Sort by Date Added</option>
+                    </select>
+                        <!-- <button onclick="toggleSortOrder()"
+                                class="glass-button px-3 py-2">
+                            <span class="material-symbols-outlined">
+                                <%= sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' %>
+                            </span>
+                        </button> -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <% favorites.forEach(favorite => { %>
+                    <div class="bg-white/10 rounded-lg p-4 favorite-card transition-all duration-300 hover:bg-white/20 hover:shadow-lg hover:-translate-y-1 cursor-pointer group"
+                         data-id="<%= favorite._id %>"
+                         data-custom-name="<%= favorite.customName %>"
+                         data-name="<%= favorite.name %>"
+                         data-category="<%= favorite.category %>"
+                         data-notes="<%= favorite.notes || '' %>"
+                         data-tags="<%= favorite.tags ? favorite.tags.join(',') : '' %>">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="text-white font-medium transition-colors duration-300 group-hover:text-white/100"><%= favorite.customName %></h3>
+                                <p class="text-white/70 text-sm transition-colors duration-300 group-hover:text-white/90"><%= favorite.name %></p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="edit-favorite text-white/50 hover:text-white transition-colors duration-300"
+                                        data-id="<%= favorite._id %>"
+                                        data-custom-name="<%= favorite.customName %>"
+                                        data-name="<%= favorite.name %>"
+                                        data-category="<%= favorite.category %>"
+                                        data-notes="<%= favorite.notes || '' %>"
+                                        data-tags="<%= favorite.tags ? favorite.tags.join(',') : '' %>">
+                                    <span class="material-symbols-outlined">edit</span>
+                                </button>
+                                <form action="/favorites/remove" method="POST" class="inline"
+                                      onsubmit="return confirm('Are you sure you want to remove this location?')">
+                                    <input type="hidden" name="favoriteId" value="<%= favorite._id %>">
+                                    <button type="submit" class="text-white/50 hover:text-white transition-colors duration-300">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="text-white/60 text-sm mb-2 transition-colors duration-300 group-hover:text-white/80">
+                            <span class="material-symbols-outlined align-middle text-sm">location_on</span>
+                            <%= favorite.latitude.toFixed(4) %>°, <%= favorite.longitude.toFixed(4) %>°
+                        </div>
+
+                        <% if (favorite.notes) { %>
+                            <p class="text-white/70 text-sm mb-2 transition-colors duration-300 group-hover:text-white/90"><%= favorite.notes %></p>
+                        <% } %>
+
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2 py-1 bg-white/20 rounded-full text-xs text-white/80 transition-colors duration-300 group-hover:bg-white/30">
+                                <%= favorite.category %>
+                            </span>
+                            <% favorite.tags.forEach(tag => { %>
+                                <span class="px-2 py-1 bg-white/20 rounded-full text-xs text-white/80 transition-colors duration-300 group-hover:bg-white/30">
+                                    <%= tag %>
+                                </span>
+                            <% }); %>
+                        </div>
+
+                        <div class="text-white/50 text-xs transition-colors duration-300 group-hover:text-white/70">
+                            Added <%= new Date(favorite.createdAt).toLocaleDateString() %>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
     </div>
 
-    <% if (typeof error !== 'undefined' && error) { %>
-      <div class="glass-card-sm bg-red-400/30 text-white p-4 rounded-lg mb-6">
-        <%= error %>
-      </div>
-    <% } %>
+    <!-- Edit Modal Template -->
+    <div id="editFavoriteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-card w-full max-w-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">Edit Location</h2>
+                    <button type="button" class="modal-close text-white/70 hover:text-white">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
 
-    <% if (favorites && favorites.length > 0) { %>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <% favorites.forEach(favorite => { %>
-          <div class="glass-card-sm relative group">
-            <form action="/favorites/remove" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <input type="hidden" name="favoriteId" value="<%= favorite._id %>">
-              <button type="submit" class="text-white/50 hover:text-white/80 p-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </form>
+                <form id="editFavoriteForm" method="POST">
+                    <input type="hidden" name="favoriteId" id="editFavoriteId">
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Custom Name</label>
+                            <input type="text" name="customName" id="editCustomName" required
+                                   class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
+                        </div>
 
-            <a href="/dashboard/search?city=<%= encodeURIComponent(favorite.name) %>" class="block">
-              <div class="flex items-start mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-white/70 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                </svg>
-                <div class="text-lg font-medium text-white truncate"><%= favorite.name %></div>
-              </div>
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Category</label>
+                            <select name="category" id="editCategory" 
+                                    class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
+                                <% categories.forEach(cat => { %>
+                                    <option value="<%= cat %>"><%= cat %></option>
+                                <% }); %>
+                            </select>
+                        </div>
 
-              <div class="text-white/60 text-sm">
-                <div class="mb-1">Added on <%= new Date(favorite.createdAt).toLocaleDateString('en-US', { 
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                }) %></div>
-                <div>Coordinates: <%= favorite.latitude.toFixed(4) %>, <%= favorite.longitude.toFixed(4) %></div>
-              </div>
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Notes</label>
+                            <textarea name="notes" id="editNotes"
+                                      class="w-full px-3 py-2 bg-white/20 rounded-lg text-white"
+                                      rows="3"></textarea>
+                        </div>
 
-              <div class="mt-4 text-sm">
-                <span class="glass-button text-sm py-1">
-                  View Weather
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
-                </span>
-              </div>
-            </a>
-          </div>
-        <% }); %>
-      </div>
-    <% } else { %>
-      <div class="text-center py-12">
-        <div class="text-white/70 text-lg mb-4">No favorite locations yet</div>
-        <p class="text-white/60 mb-6">Start by adding locations to your favorites from the dashboard</p>
-        <a href="/dashboard" class="glass-button">Go to Dashboard</a>
-      </div>
-    <% } %>
-  </div>
-</div>
+                        <div>
+                            <label class="block text-white/80 text-sm mb-2">Tags (comma-separated)</label>
+                            <input type="text" name="tags" id="editTags"
+                                   class="w-full px-3 py-2 bg-white/20 rounded-lg text-white"
+                                   placeholder="beach, hiking, kids">
+                        </div>
+
+                        <div class="flex justify-end gap-2 mt-6">
+                            <button type="button" class="modal-close glass-button bg-red-400/30 hover:bg-red-500/40">
+                                Cancel
+                            </button>
+                            <button type="submit" class="glass-button">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Update favorite
+            $('.edit-favorite-form').on('submit', function(e) {
+                e.preventDefault();
+                const form = $(this);
+                
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: form.serialize(),
+                    success: function(response) {
+                        $('#editFavoriteModal').modal('hide');
+                        // Reload the page to show updated data
+                        window.location.reload();
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error updating favorite: ' + error);
+                    }
+                });
+            });
+
+            // Make favorite cards clickable
+            $('.favorite-card').on('click', function(e) {
+                // Only navigate if the click wasn't on a button or form element
+                if (!$(e.target).closest('button, form').length) {
+                    const locationName = $(this).data('name');
+                    window.location.href = `/dashboard/search?city=${encodeURIComponent(locationName)}`;
+                }
+            });
+
+            // Filter panel toggle
+            $('#showFilters').on('click', function() {
+                $('#filtersPanel').slideToggle();
+            });
+
+            // Reset filters
+            $('#resetFilters').on('click', function() {
+                $('#filterForm').find('input, select').val('');
+                $('#filterForm').submit();
+            });
+
+            // Edit favorite modal
+            $('.edit-favorite-btn').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const favoriteId = $(this).data('id');
+                const customName = $(this).data('custom-name');
+                const category = $(this).data('category');
+                const notes = $(this).data('notes');
+                const tags = $(this).data('tags');
+
+                $('#editFavoriteId').val(favoriteId);
+                $('#editCustomName').val(customName);
+                $('#editCategory').val(category);
+                $('#editNotes').val(notes);
+                $('#editTags').val(tags);
+
+                $('#editFavoriteModal').modal('show');
+            });
+
+            // URL parameter helpers
+            function updateQueryParam(key, value) {
+                const url = new URL(window.location.href);
+                url.searchParams.set(key, value);
+                return url.toString();
+            }
+
+            function toggleSortOrder() {
+                const url = new URL(window.location.href);
+                const currentOrder = url.searchParams.get('sortOrder') || 'asc';
+                url.searchParams.set('sortOrder', currentOrder === 'asc' ? 'desc' : 'asc');
+                window.location.href = url.toString();
+            }
+
+            // Make sort controls work
+            $('select[name="sortBy"]').change(function() {
+                window.location.href = updateQueryParam('sortBy', $(this).val());
+            });
+
+            // Modal handling
+            function openEditModal(favoriteId, data) {
+                const modal = $('#editFavoriteModal');
+                const form = $('#editFavoriteForm');
+
+                // Set form action
+                form.attr('action', `/favorites/${favoriteId}/update`);
+                
+                // Populate form fields
+                $('#editFavoriteId').val(favoriteId);
+                $('#editCustomName').val(data.customName || data.name);
+                $('#editCategory').val(data.category || 'OTHER');
+                $('#editNotes').val(data.notes || '');
+                $('#editTags').val((data.tags || []).join(', '));
+
+                // Show modal with animation
+                modal.removeClass('hidden')
+                     .find('.glass-card')
+                     .css('transform', 'scale(0.95)')
+                     .animate({ transform: 'scale(1)' }, 200);
+
+                // Lock body scroll
+                $('body').css('overflow', 'hidden');
+            }
+
+            function closeEditModal() {
+                const modal = $('#editFavoriteModal');
+                
+                // Hide modal with animation
+                modal.find('.glass-card')
+                     .animate({ transform: 'scale(0.95)' }, 200, function() {
+                         modal.addClass('hidden');
+                         // Reset form
+                         $('#editFavoriteForm')[0].reset();
+                     });
+
+                // Restore body scroll
+                $('body').css('overflow', '');
+            }
+
+            // Edit button click handler
+            $('.edit-favorite').click(function(e) {
+                e.preventDefault();
+                const favoriteId = $(this).data('id');
+                const data = {
+                    customName: $(this).data('custom-name'),
+                    name: $(this).data('name'),
+                    category: $(this).data('category'),
+                    notes: $(this).data('notes'),
+                    tags: $(this).data('tags').split(',').filter(Boolean)
+                };
+                openEditModal(favoriteId, data);
+            });
+
+            // Close modal handlers
+            $('.modal-close').click(closeEditModal);
+            $('#editFavoriteModal').click(function(e) {
+                if (e.target === this) closeEditModal();
+            });
+
+            // Close on escape key
+            $(document).keydown(function(e) {
+                if (e.key === 'Escape') closeEditModal();
+            });
+        });
+    </script>
 
 <script src="/assets/js/theme.js"></script> 
 </body>
