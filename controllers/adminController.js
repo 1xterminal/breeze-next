@@ -11,6 +11,46 @@ const bcrypt = require('bcrypt');
  */
 const getDashboard = async (req, res) => {
     try {
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Build filter query
+        const filter = {};
+
+        // Role filter
+        if (req.query.role && ['user', 'admin'].includes(req.query.role)) {
+            filter.role = req.query.role;
+        }
+
+        // Search by username or email
+        if (req.query.search) {
+            filter.$or = [
+                { username: new RegExp(req.query.search, 'i') },
+                { email: new RegExp(req.query.search, 'i') }
+            ];
+        }
+
+        // Sorting
+        let sort = { createdAt: -1 }; // Default sort
+        if (req.query.sortBy) {
+            switch (req.query.sortBy) {
+                case 'username':
+                    sort = { username: req.query.sortOrder === 'desc' ? -1 : 1 };
+                    break;
+                case 'email':
+                    sort = { email: req.query.sortOrder === 'desc' ? -1 : 1 };
+                    break;
+                case 'lastLogin':
+                    sort = { lastLoginAt: req.query.sortOrder === 'desc' ? -1 : 1 };
+                    break;
+                case 'created':
+                    sort = { createdAt: req.query.sortOrder === 'desc' ? -1 : 1 };
+                    break;
+            }
+        }
+
         // Get system stats for the last 24 hours
         const oneDayAgo = new Date(Date.now() - 24*60*60*1000);
         
@@ -20,14 +60,23 @@ const getDashboard = async (req, res) => {
             recentSearches,
             newUsers,
             users,
-            recentLogs
+            recentLogs,
+            filteredUsers,
+            totalFilteredUsers
         ] = await Promise.all([
             User.countDocuments(),
             SearchHistory.countDocuments(),
             SearchHistory.countDocuments({ createdAt: { $gte: oneDayAgo } }),
             User.countDocuments({ createdAt: { $gte: oneDayAgo } }),
-            User.find().select('-password').sort({ createdAt: -1 }).limit(10),
-            AdminLog.find().sort({ createdAt: -1 }).limit(10)
+            User.find().select('-password').sort({ createdAt: -1 }).limit(5),
+            AdminLog.find().sort({ createdAt: -1 }).limit(5),
+            User.find(filter)
+                .select('-password')
+                .sort(sort)
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            User.countDocuments(filter)
         ]);
 
         const stats = {
@@ -37,18 +86,36 @@ const getDashboard = async (req, res) => {
             newUsers
         };
 
-        // Get all users for the user management table
-        const allUsers = await User.find()
-            .select('-password')
-            .sort({ createdAt: -1 });
+        // Calculate total pages
+        const totalPages = Math.ceil(totalFilteredUsers / limit);
+
+        // Build query string for pagination links
+        const queryParams = { ...req.query };
+        delete queryParams.page;
+        const queryString = Object.keys(queryParams).length 
+            ? '&' + new URLSearchParams(queryParams).toString() 
+            : '';
 
         return res.render('pages/admin/index', {
             title: 'Admin Dashboard',
             currentUser: req.user,
             user: req.user,
             stats,
-            users: allUsers,
+            users: filteredUsers,
             recentLogs,
+            pagination: {
+                current: page,
+                total: totalPages,
+                limit,
+                totalItems: totalFilteredUsers
+            },
+            filters: {
+                role: req.query.role || '',
+                search: req.query.search || '',
+                sortBy: req.query.sortBy || 'created',
+                sortOrder: req.query.sortOrder || 'desc'
+            },
+            queryString,
             layout: 'layouts/main'
         });
     } catch (error) {
@@ -89,22 +156,110 @@ const getUser = async (req, res) => {
 };
 
 /**
- * Get system logs
+ * Get system logs with filtering, sorting, and pagination
  * @route GET /admin/logs
  * @access Admin
  */
 const getLogs = async (req, res) => {
     try {
-        const logs = await AdminLog.find()
-            .sort({ createdAt: -1 })
-            .limit(100)
-            .populate('adminUserId', 'username')
-            .populate('targetUserId', 'username');
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        // Sorting parameters
+        const sortField = req.query.sortField || 'createdAt';
+        const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+        const sort = { [sortField]: sortOrder };
+
+        // Build filter query
+        const filter = {};
+
+        // Admin username/ID filter
+        if (req.query.adminUsername) {
+            filter.adminUsername = new RegExp(req.query.adminUsername, 'i');
+        }
+        if (req.query.adminUserId) {
+            filter.adminUserId = req.query.adminUserId;
+        }
+
+        // Action filter
+        if (req.query.action) {
+            filter.action = req.query.action;
+        }
+
+        // Target user filter
+        if (req.query.targetUserId) {
+            filter.targetUserId = req.query.targetUserId;
+        }
+
+        // IP address filter
+        if (req.query.ipAddress) {
+            filter.ipAddress = new RegExp(req.query.ipAddress, 'i');
+        }
+
+        // Date range filter
+        if (req.query.startDate || req.query.endDate) {
+            filter.createdAt = {};
+            if (req.query.startDate) {
+                filter.createdAt.$gte = new Date(req.query.startDate);
+            }
+            if (req.query.endDate) {
+                filter.createdAt.$lte = new Date(req.query.endDate);
+            }
+        }
+
+        // Execute queries
+        const [logs, totalLogs, actions, admins] = await Promise.all([
+            AdminLog.find(filter)
+                .sort(sort)
+                .skip(skip)
+                .limit(limit)
+                .populate('adminUserId', 'username')
+                .populate('targetUserId', 'username'),
+            AdminLog.countDocuments(filter),
+            AdminLog.distinct('action'),
+            User.find({ role: 'admin' }).select('username _id')
+        ]);
+
+        // Calculate pagination info
+        const totalPages = Math.ceil(totalLogs / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+
+        // Get unique IP addresses for filter dropdown
+        const uniqueIPs = await AdminLog.distinct('ipAddress');
 
         return res.render('pages/admin/logs', {
             title: 'System Logs',
             user: req.user,
             logs,
+            totalLogs,
+            pagination: {
+                current: page,
+                total: totalPages,
+                hasNext: hasNextPage,
+                hasPrev: hasPrevPage,
+                limit
+            },
+            filters: {
+                adminUsername: req.query.adminUsername || '',
+                adminUserId: req.query.adminUserId || '',
+                action: req.query.action || '',
+                targetUserId: req.query.targetUserId || '',
+                ipAddress: req.query.ipAddress || '',
+                startDate: req.query.startDate || '',
+                endDate: req.query.endDate || ''
+            },
+            sorting: {
+                field: sortField,
+                order: sortOrder === 1 ? 'asc' : 'desc'
+            },
+            filterOptions: {
+                actions,
+                admins,
+                ipAddresses: uniqueIPs
+            },
             layout: 'layouts/main'
         });
     } catch (error) {
@@ -368,6 +523,39 @@ const deleteUser = async (req, res) => {
     }
 };
 
+// const exportLogs = async (req, res) => {
+//     try {
+//         const logs = await AdminLog.find().sort({ createdAt: -1 });
+        
+//         // Format logs for CSV
+//         const csvData = logs.map(log => ({
+//             timestamp: log.createdAt.toISOString(),
+//             level: log.level,
+//             message: log.message,
+//             user: log.adminUserId?.username || 'system',
+//             ip: log.ipAddress || 'N/A'
+//         }));
+
+//         // Set headers for CSV download
+//         res.setHeader('Content-Type', 'text/csv');
+//         res.setHeader('Content-Disposition', 'attachment; filename=system-logs.csv');
+
+//         // Write CSV header
+//         res.write('Timestamp,Level,Message,User,IP\n');
+
+//         // Write each log entry
+//         csvData.forEach(log => {
+//             res.write(`${log.timestamp},${log.level},"${log.message.replace(/"/g, '""')}",${log.user},${log.ip}\n`);
+//         });
+
+//         res.end();
+//     } catch (error) {
+//         console.error('Error exporting logs:', error);
+//         req.flash('error', 'Failed to export logs');
+//         res.redirect('/admin/logs');
+//     }
+// };
+
 module.exports = {
     getDashboard,
     getUser,
@@ -377,8 +565,13 @@ module.exports = {
     getLogs,
     getSettings,
     clearCache,
-    clearOldLogs
+    clearOldLogs,
+    // exportLogs
 };
+
+
+
+
 
 
 

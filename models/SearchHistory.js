@@ -23,14 +23,16 @@ const SearchHistorySchema = new mongoose.Schema({
       windSpeed: Number,
       windDirection: Number,
       precipitation: Number,
-      weatherCode: Number
+      weatherCode: Number,
+      temperatureUnit: { type: String, default: 'celsius' }
     },
     hourly: [{
       time: String,
       temperature: Number,
       precipitationProbability: Number,
       weatherCode: Number,
-      description: String
+      description: String,
+      temperatureUnit: { type: String, default: 'celsius' }
     }],
     daily: [{
       date: String,
@@ -39,7 +41,8 @@ const SearchHistorySchema = new mongoose.Schema({
       precipitationSum: Number,
       precipitationProbability: Number,
       weatherCode: Number,
-      description: String
+      description: String,
+      temperatureUnit: { type: String, default: 'celsius' }
     }]
   }
 }, {
@@ -66,14 +69,16 @@ SearchHistorySchema.statics.addSearch = async function(userId, locationData, wea
         windSpeed: weatherData.current.windSpeed,
         windDirection: weatherData.current.windDirection,
         precipitation: weatherData.current.precipitation,
-        weatherCode: weatherData.current.weatherCode
+        weatherCode: weatherData.current.weatherCode,
+        temperatureUnit: weatherData.current.originalUnit || 'celsius'
       },
       hourly: weatherData.hourlyForecast.map(hour => ({
         time: hour.time,
         temperature: hour.temperature,
         precipitationProbability: hour.precipitationProbability,
         weatherCode: hour.weatherCode,
-        description: hour.description
+        description: hour.description,
+        temperatureUnit: hour.originalUnit || 'celsius'
       })),
       daily: weatherData.dailyForecast.map(day => ({
         date: day.date,
@@ -82,7 +87,8 @@ SearchHistorySchema.statics.addSearch = async function(userId, locationData, wea
         precipitationSum: day.precipitationSum,
         precipitationProbability: day.precipitationProbability,
         weatherCode: day.weatherCode,
-        description: day.description
+        description: day.description,
+        temperatureUnit: day.originalUnit || 'celsius'
       }))
     }
   });

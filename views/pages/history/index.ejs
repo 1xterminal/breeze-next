@@ -32,18 +32,66 @@
   <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Header & Actions Row -->
     <div class="glass-card-sm p-6 mb-6">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center"> 
         <h1 class="text-2xl font-bold text-white">Search History</h1>
-        <% if (searchHistory && searchHistory.length > 0) { %>
-          <form action="/history/clear" method="POST" class="inline">
-            <button type="submit"
-                    class="glass-button text-sm py-2"
-                    onclick="return confirm('Are you sure you want to clear all search history?')">
-              Clear History
-            </button>
-          </form>
-        <% } %>
+        <div class="flex gap-3">
+          <button id="showFilters" class="glass-button">
+            <span class="material-symbols-outlined align-middle mr-2">filter_list</span>
+            Filters
+          </button>
+          <% if (searchHistory && searchHistory.length > 0) { %>
+            <form action="/history/clear" method="POST" class="inline">
+              <button type="submit"
+                      class="glass-button text-sm py-2"
+                      onclick="return confirm('Are you sure you want to clear all search history?')">
+                Clear History
+              </button>
+            </form>
+          <% } %>
+        </div>
       </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div id="filtersPanel" class="glass-card-sm mb-6" style="display: none;">
+      <form id="filterForm" action="/history" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+        <div>
+          <label class="block text-white/80 text-sm mb-2">Location</label>
+          <input type="text" name="location" value="<%= filters.location %>"
+                 placeholder="Search by location"
+                 class="w-full px-3 py-2 bg-white/20 rounded-lg text-white placeholder-white/50">
+        </div>
+
+        <div>
+          <label class="block text-white/80 text-sm mb-2">Start Date</label>
+          <input type="date" name="startDate" value="<%= filters.startDate %>"
+                 class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
+        </div>
+
+        <div>
+          <label class="block text-white/80 text-sm mb-2">End Date</label>
+          <input type="date" name="endDate" value="<%= filters.endDate %>"
+                 class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
+        </div>
+
+        <div>
+          <label class="block text-white/80 text-sm mb-2">Temperature Range</label>
+          <div class="flex gap-2 items-center">
+            <input type="number" name="minTemp" value="<%= filters.minTemp %>"
+                   placeholder="Min"
+                   class="w-full px-3 py-2 bg-white/20 rounded-lg text-white placeholder-white/50">
+            <span class="text-white">to</span>
+            <input type="number" name="maxTemp" value="<%= filters.maxTemp %>"
+                   placeholder="Max"
+                   class="w-full px-3 py-2 bg-white/20 rounded-lg text-white placeholder-white/50">
+          </div>
+        </div>
+
+        <div class="flex items-end gap-2">
+          <button type="submit" class="glass-button">Apply Filters</button>
+          <button type="button" id="resetFilters" class="glass-button bg-red-400/30 hover:bg-red-500/40">Reset</button>
+        </div>
+      </form>
     </div>
 
     <% if (error) { %>
@@ -56,7 +104,13 @@
     <% if (searchHistory && searchHistory.length > 0) { %>
       <div class="glass-card p-6">
         <div class="mb-3 flex items-center justify-between">
-          <div class="text-white/80 text-lg font-medium">Swipe to see more</div>
+          <div class="text-white/80 text-lg font-medium">
+            <% if (searchHistory.length > 0) { %>
+              Showing <%= (page - 1) * limit + 1 %> to <%= Math.min(page * limit, totalItems) %> of <%= totalItems %> entries
+            <% } else { %>
+              No entries to show
+            <% } %>
+          </div>
           <div class="text-white/60 text-sm">
             <span>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -102,7 +156,16 @@
                     <div class="text-3xl mr-3"><%= weatherIcon %></div>
                     <div>
                       <div class="text-white text-2xl font-light">
-                        <%= search.weatherSnapshot.current.temperature %>°<%= locals.user?.settings?.temperatureUnit === 'fahrenheit' ? 'F' : locals.user?.settings?.temperatureUnit === 'kelvin' ? 'K' : 'C' %>
+                        <% 
+                          const sourceUnit = search.weatherSnapshot.current.temperatureUnit || 'celsius';
+                          const targetUnit = locals.user?.settings?.temperatureUnit || 'celsius';
+                          const displayTemp = convertTemperature(
+                            search.weatherSnapshot.current.temperature,
+                            sourceUnit,
+                            targetUnit
+                          );
+                        %>
+                        <%= formatTemperature(displayTemp, targetUnit) %>
                       </div>
                       <div class="text-white/70 text-sm"><%= search.weatherSnapshot.current.description %></div>
                     </div>
@@ -112,7 +175,7 @@
                       <span>Searched:</span>
                       <span><%= new Date(search.createdAt).toLocaleDateString() %></span>
                     </div>
-                    <a href="/dashboard/search?city=<%= encodeURIComponent(search.location.name) %>"
+                    <a href="/history/<%= search._id %>"
                        class="text-white hover:underline">
                       View
                     </a>
@@ -128,6 +191,23 @@
             <% }); %>
           </div>
         </div>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+          <div class="flex justify-between items-center mt-6">
+            <div class="text-white/70">
+              Page <%= page %> of <%= totalPages %>
+            </div>
+            <div class="flex gap-2">
+              <% if (page > 1) { %>
+                <a href="?page=<%= page - 1 %><%= queryString %>" class="glass-button">Previous</a>
+              <% } %>
+              <% if (page < totalPages) { %>
+                <a href="?page=<%= page + 1 %><%= queryString %>" class="glass-button">Next</a>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
       </div>
 
       <!-- Add scrollbar styling -->
@@ -170,6 +250,35 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Toggle filters panel
+      const showFiltersBtn = document.getElementById('showFilters');
+      const filtersPanel = document.getElementById('filtersPanel');
+      
+      if (showFiltersBtn && filtersPanel) {
+        showFiltersBtn.addEventListener('click', function() {
+          if (filtersPanel.style.display === 'none') {
+            filtersPanel.style.display = 'block';
+          } else {
+            filtersPanel.style.display = 'none';
+          }
+        });
+      }
+
+      // Reset filters
+      const resetFiltersBtn = document.getElementById('resetFilters');
+      const filterForm = document.getElementById('filterForm');
+      
+      if (resetFiltersBtn && filterForm) {
+        resetFiltersBtn.addEventListener('click', function() {
+          // Clear all inputs
+          filterForm.querySelectorAll('input').forEach(input => {
+            input.value = '';
+          });
+          // Submit the form
+          filterForm.submit();
+        });
+      }
+
       // Enable mousewheel horizontal scrolling
       const scrollContainer = document.querySelector('.overflow-x-auto');
       if (scrollContainer) {

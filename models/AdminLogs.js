@@ -28,6 +28,10 @@ const AdminLogSchema = new mongoose.Schema({
       'VIEW_USER_DETAILS',
       'UPDATE_USER_ROLE',
       'VIEW_SYSTEM_STATS',
+      'UPDATE_FEEDBACK',
+      'DELETE_FEEDBACK',
+      'VIEW_FEEDBACK',
+      'MANAGE_FEEDBACK',
       // Add more specific admin actions as needed
     ],
   },
