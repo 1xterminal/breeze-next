@@ -1,5 +1,5 @@
 const express = require('express');
-const { isUser } = require('../middleware/roles');
+const { isUser, isAdmin } = require('../middleware/roles');
 const {
     submitFeedback,
     getFeedbackHistory,
@@ -9,10 +9,10 @@ const {
 const router = express.Router();
 
 // Public routes
-router.get('/submit', getSubmitForm);
-router.post('/submit', submitFeedback);
+router.get('/submit', isUser, getSubmitForm);
+router.post('/submit', isUser, submitFeedback);
 
-// User routes
-router.get('/history', isUser, getFeedbackHistory);
+// Admin routes
+router.get('/history', isAdmin, getFeedbackHistory);
 
 module.exports = router; 
