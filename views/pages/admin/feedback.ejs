@@ -42,11 +42,11 @@
                     <label class="block text-white/80 text-sm mb-2">Status</label>
                     <select name="status" class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
                         <option value="">All Statuses</option>
-                        <option value="NEW" <%= filters.status === 'NEW' ? 'selected' : '' %>>New</option>
-                        <option value="VIEWED" <%= filters.status === 'VIEWED' ? 'selected' : '' %>>Viewed</option>
-                        <option value="INVESTIGATING" <%= filters.status === 'INVESTIGATING' ? 'selected' : '' %>>Investigating</option>
-                        <option value="RESOLVED" <%= filters.status === 'RESOLVED' ? 'selected' : '' %>>Resolved</option>
-                        <option value="WONT_FIX" <%= filters.status === 'WONT_FIX' ? 'selected' : '' %>>Won't Fix</option>
+                        <option class="text-black" value="NEW" <%= filters.status === 'NEW' ? 'selected' : '' %>>New</option>
+                        <option class="text-black" value="VIEWED" <%= filters.status === 'VIEWED' ? 'selected' : '' %>>Viewed</option>
+                        <option class="text-black" value="INVESTIGATING" <%= filters.status === 'INVESTIGATING' ? 'selected' : '' %>>Investigating</option>
+                        <option class="text-black" value="RESOLVED" <%= filters.status === 'RESOLVED' ? 'selected' : '' %>>Resolved</option>
+                        <option class="text-black" value="WONT_FIX" <%= filters.status === 'WONT_FIX' ? 'selected' : '' %>>Won't Fix</option>
                     </select>
                 </div>
 
@@ -54,10 +54,10 @@
                     <label class="block text-white/80 text-sm mb-2">Type</label>
                     <select name="feedbackType" class="w-full px-3 py-2 bg-white/20 rounded-lg text-white">
                         <option value="">All Types</option>
-                        <option value="BUG_REPORT" <%= filters.feedbackType === 'BUG_REPORT' ? 'selected' : '' %>>Bug Report</option>
-                        <option value="DATA_INACCURACY" <%= filters.feedbackType === 'DATA_INACCURACY' ? 'selected' : '' %>>Data Inaccuracy</option>
-                        <option value="SUGGESTION" <%= filters.feedbackType === 'SUGGESTION' ? 'selected' : '' %>>Feature Suggestion</option>
-                        <option value="OTHER" <%= filters.feedbackType === 'OTHER' ? 'selected' : '' %>>Other</option>
+                        <option class="text-black" value="BUG_REPORT" <%= filters.feedbackType === 'BUG_REPORT' ? 'selected' : '' %>>Bug Report</option>
+                        <option class="text-black" value="DATA_INACCURACY" <%= filters.feedbackType === 'DATA_INACCURACY' ? 'selected' : '' %>>Data Inaccuracy</option>
+                        <option class="text-black" value="SUGGESTION" <%= filters.feedbackType === 'SUGGESTION' ? 'selected' : '' %>>Feature Suggestion</option>
+                        <option class="text-black" value="OTHER" <%= filters.feedbackType === 'OTHER' ? 'selected' : '' %>>Other</option>
                     </select>
                 </div>
 
